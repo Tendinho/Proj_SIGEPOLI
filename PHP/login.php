@@ -1,0 +1,90 @@
+<?php
+require_once 'db.php';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $database = new Database();
+    $db = $database->getConnection();
+
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+
+    $query = "SELECT u.id, u.username, u.password, u.email, c.nivel_acesso, f.nome_completo 
+              FROM usuarios u 
+              JOIN cargos c ON u.cargo_id = c.id 
+              JOIN funcionarios f ON u.id = f.usuario_id 
+              WHERE u.username = :username AND u.ativo = 1";
+
+    $stmt = $db->prepare($query);
+    $stmt->bindParam(":username", $username);
+    $stmt->execute();
+
+    if ($stmt->rowCount() == 1) {
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($password === $row['password']) {
+            session_start();
+            $_SESSION['usuario_id'] = $row['id'];
+            $_SESSION['username'] = $row['username'];
+            $_SESSION['email'] = $row['email'];
+            $_SESSION['nivel_acesso'] = $row['nivel_acesso'];
+            $_SESSION['nome_completo'] = $row['nome_completo'];
+
+            // Atualizar último login
+            $query = "UPDATE usuarios SET ultimo_login = NOW() WHERE id = :id";
+            $stmt = $db->prepare($query);
+            $stmt->bindParam(":id", $row['id']);
+            $stmt->execute();
+
+            header("Location: index.php");
+            exit();
+        }
+    }
+
+    $mensagem = "Usuário ou senha inválidos!";
+}
+?>
+
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - SIGEPOLI</title>
+    <link rel="stylesheet" href="/Context/CSS/styles.css">
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <h1>SIGEPOLI</h1>
+            <h2>Sistema Integrado de Gestão</h2>
+
+            <?php if (isset($mensagem)): ?>
+                <div class="alert alert-danger"><?php echo $mensagem; ?></div>
+            <?php endif; ?>
+
+            <form method="post" action="login.php">
+                <div class="form-group">
+                    <label for="username">Usuário:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Senha:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Entrar</button>
+            </form>
+
+            <p class="login-credentials">
+                Credenciais de teste:<br>
+                Usuário: admin<br>
+                Senha: password123
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>
