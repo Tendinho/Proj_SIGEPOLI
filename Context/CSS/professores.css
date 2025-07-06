@@ -1,0 +1,285 @@
+/* Estilos específicos para o módulo de professores */
+.professores-container {
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.professores-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #eaeef2;
+}
+
+.professores-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.professores-title i {
+    color: #3a86ff;
+}
+
+.professores-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* Barra de ferramentas */
+.professores-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.professores-search {
+    display: flex;
+    align-items: center;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.professores-search:focus-within {
+    box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.15);
+}
+
+.professores-search input {
+    border: none;
+    background: transparent;
+    padding: 0.5rem 1rem;
+    width: 250px;
+    font-size: 0.95rem;
+    outline: none;
+}
+
+.professores-search button {
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: color 0.2s;
+}
+
+.professores-search button:hover {
+    color: #3a86ff;
+}
+
+/* Tabela de professores */
+.professores-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 1.5rem 0;
+    font-size: 0.95rem;
+}
+
+.professores-table thead th {
+    background-color: #3a86ff;
+    color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 500;
+    position: sticky;
+    top: 0;
+}
+
+.professores-table th:first-child {
+    border-top-left-radius: 8px;
+}
+
+.professores-table th:last-child {
+    border-top-right-radius: 8px;
+}
+
+.professores-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #eaeef2;
+    vertical-align: middle;
+}
+
+.professores-table tr:last-child td {
+    border-bottom: none;
+}
+
+.professores-table tr:hover td {
+    background-color: #f0f7ff;
+}
+
+/* Status */
+.status-badge {
+    display: inline-block;
+    padding: 0.35rem 0.7rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-ativo {
+    background-color: #e6f7ee;
+    color: #0d8a4d;
+}
+
+.status-inativo {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+/* Ações */
+.professores-actions-cell {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Paginação */
+.professores-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+/* Formulário */
+.professores-form {
+    background-color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin-top: 1.5rem;
+}
+
+.professores-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.professores-form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--dark-color);
+}
+
+.professores-form-group input,
+.professores-form-group select,
+.professores-form-group textarea {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 1px solid #ced4da;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.professores-form-group input:focus,
+.professores-form-group select:focus,
+.professores-form-group textarea:focus {
+    border-color: #3a86ff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.2);
+}
+
+.professores-form-group textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.professores-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+/* Alertas */
+.alert {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.alert i {
+    font-size: 1.2rem;
+}
+
+.alert-success {
+    background-color: #e6ffed;
+    color: #1b5e20;
+    border-left: 4px solid #4bb543;
+}
+
+.alert-error {
+    background-color: #ffebee;
+    color: #c62828;
+    border-left: 4px solid #d9534f;
+}
+
+.alert-warning {
+    background-color: #fff3e0;
+    color: #e65100;
+    border-left: 4px solid #f0ad4e;
+}
+
+/* Responsividade */
+@media (max-width: 992px) {
+    .professores-container {
+        padding: 1.5rem;
+    }
+    
+    .professores-table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .professores-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .professores-search {
+        width: 100%;
+    }
+    
+    .professores-search input {
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .professores-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .professores-actions {
+        width: 100%;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

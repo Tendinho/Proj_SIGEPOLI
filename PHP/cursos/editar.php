@@ -88,11 +88,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Curso - SIGEPOLI</title>
-    <link rel="stylesheet" href="../../Context/CSS/style.css">
-    <link rel="stylesheet" href="../../Context/CSS/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/Context/CSS/styles.css">
+        <link rel="stylesheet" href="/Context/CSS/cursos.css">
+    <link rel="stylesheet" href="/Context/fontawesome/css/all.min.css">
 </head>
 <body>
-    <?php include_once '../../includes/header.php'; ?>
     
     <div class="content">
         <h1><i class="fas fa-book-edit"></i> Editar Curso</h1>

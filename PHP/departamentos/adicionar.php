@@ -2,78 +2,73 @@
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../db.php';
 
-if (!isset($_SESSION['usuario']) || $_SESSION['usuario']['tipo'] !== 'admin') {
-    header('Location: ../../login.php');
-    exit();
-}
+verificarLogin();
+verificarAcesso(5);
 
-$chefes = $pdo->query("SELECT cod_funcionario, nome FROM Funcionario WHERE tipo IN ('admin', 'coordenador')")->fetchAll();
+$db = (new Database())->getConnection();
+
+// Carrega lista de possíveis chefes (funcionários ativos)
+$chefes = $db
+    ->query("SELECT id, nome_completo FROM funcionarios WHERE ativo = 1 AND cargo_id IN (1,2)")
+    ->fetchAll(PDO::FETCH_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nome      = trim($_POST['nome']);
+    $orcamento = floatval($_POST['orcamento']);
+    $chefe_id  = $_POST['chefe_id'] !== '' ? intval($_POST['chefe_id']) : null;
+
     try {
-        $id = adicionarDepartamento(
-            $_POST['nome'],
-            $_POST['orcamento'],
-            $_POST['chefe_id'] ?: null
-        );
-        
-        $success = "Departamento adicionado com sucesso!";
-        $_POST = []; // Limpar formulário
-    } catch (Exception $e) {
-        $error = "Erro ao adicionar departamento: " . $e->getMessage();
+        $stmt = $db->prepare("
+            INSERT INTO departamentos (nome, orcamento_anual, chefe_id)
+            VALUES (:nome, :orcamento, :chefe)
+        ");
+        $stmt->bindParam(':nome',      $nome);
+        $stmt->bindParam(':orcamento', $orcamento);
+        $stmt->bindParam(':chefe',     $chefe_id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        registrarAuditoria('Criação', 'departamentos', $db->lastInsertId());
+        $_SESSION['mensagem']      = "Departamento adicionado com sucesso!";
+        $_SESSION['tipo_mensagem'] = "sucesso";
+        header("Location: index.php");
+        exit;
+    } catch (PDOException $e) {
+        $_SESSION['mensagem']      = "Erro ao adicionar departamento: " . $e->getMessage();
+        $_SESSION['tipo_mensagem'] = "erro";
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <?php include '../../includes/head.php'; ?>
-    <title>Adicionar Departamento - <?= SITE_NAME ?></title>
+  <meta charset="UTF-8">
+  <title>Adicionar Departamento - SIGEPOLI</title>
+  <link rel="stylesheet" href="/Context/CSS/styles.css">
 </head>
 <body>
-    <?php include '../../includes/header.php'; ?>
-    
-    <main class="container">
-        <h1>Adicionar Departamento</h1>
-        
-        <?php if (isset($success)): ?>
-            <div class="alert alert-success"><?= $success ?></div>
-        <?php endif; ?>
-        
-        <?php if (isset($error)): ?>
-            <div class="alert alert-danger"><?= $error ?></div>
-        <?php endif; ?>
+  <h1>Adicionar Departamento</h1>
+  <?php if (isset($_SESSION['mensagem'])): ?>
+    <div class="alert alert-<?=$_SESSION['tipo_mensagem']?>">
+      <?= $_SESSION['mensagem']; unset($_SESSION['mensagem'],$_SESSION['tipo_mensagem']); ?>
+    </div>
+  <?php endif; ?>
+  <form method="post">
+    <label for="nome">Nome do Departamento *</label><br>
+    <input type="text" id="nome" name="nome" required><br><br>
 
-        <form method="POST" class="form-card">
-            <div class="form-group">
-                <label for="nome">Nome do Departamento:</label>
-                <input type="text" id="nome" name="nome" required value="<?= htmlspecialchars($_POST['nome'] ?? '') ?>">
-            </div>
-            
-            <div class="form-group">
-                <label for="orcamento">Orçamento Anual:</label>
-                <input type="number" id="orcamento" name="orcamento" step="0.01" min="0" required 
-                       value="<?= htmlspecialchars($_POST['orcamento'] ?? '') ?>">
-            </div>
-            
-            <div class="form-group">
-                <label for="chefe_id">Chefe do Departamento:</label>
-                <select id="chefe_id" name="chefe_id">
-                    <option value="">Selecione um chefe</option>
-                    <?php foreach ($chefes as $chefe): ?>
-                        <option value="<?= $chefe['cod_funcionario'] ?>" 
-                            <?= isset($_POST['chefe_id']) && $_POST['chefe_id'] == $chefe['cod_funcionario'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($chefe['nome']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            
-            <button type="submit" class="btn btn-primary">Salvar Departamento</button>
-        </form>
-    </main>
+    <label for="orcamento">Orçamento Anual *</label><br>
+    <input type="number" id="orcamento" name="orcamento" step="0.01" min="0" required><br><br>
 
-    <?php include '../../includes/footer.php'; ?>
+    <label for="chefe_id">Chefe do Departamento</label><br>
+    <select id="chefe_id" name="chefe_id">
+      <option value="">-- Nenhum --</option>
+      <?php foreach ($chefes as $c): ?>
+        <option value="<?=$c['id']?>"><?=htmlspecialchars($c['nome_completo'])?></option>
+      <?php endforeach; ?>
+    </select><br><br>
+
+    <button type="submit" class="btn btn-primary">Salvar Departamento</button>
+    <a href="index.php" class="btn btn-secondary">Cancelar</a>
+  </form>
 </body>
 </html>

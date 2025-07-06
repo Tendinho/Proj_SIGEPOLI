@@ -51,7 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - SIGEPOLI</title>
-    <link rel="stylesheet" href="/Context/CSS/styles.css">
+    <link rel="stylesheet" href="/Context/CSS/login.css">
+
 </head>
 
 <body>
@@ -64,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <div class="alert alert-danger"><?php echo $mensagem; ?></div>
             <?php endif; ?>
 
-            <form method="post" action="login.php">
+            <form method="post" action="/PHP/login.php">
                 <div class="form-group">
                     <label for="username">Usuário:</label>
                     <input type="text" id="username" name="username" required>
@@ -78,11 +79,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <button type="submit" class="btn btn-primary">Entrar</button>
             </form>
 
-            <p class="login-credentials">
-                Credenciais de teste:<br>
-                Usuário: admin<br>
-                Senha: password123
-            </p>
         </div>
     </div>
 </body>

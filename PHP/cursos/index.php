@@ -46,37 +46,48 @@ $stmt->execute();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cursos - SIGEPOLI</title>
-    <link rel="stylesheet" href="../../Context/CSS/style.css">
-    <link rel="stylesheet" href="../../Context/CSS/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/Context/CSS/styles.css">
+    <link rel="stylesheet" href="/Context/CSS/cursos.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/Context/fontawesome/css/all.min.css">
 </head>
 <body>
-    <?php include_once '../../includes/header.php'; ?>
-    
-    <div class="content">
-        <h1><i class="fas fa-book"></i> Gestão de Cursos</h1>
+    <div class="cursos-container">
+        <div class="cursos-header">
+            <h1 class="cursos-title">
+                <i class="fas fa-book"></i> Gestão de Cursos
+            </h1>
+            <div class="cursos-actions">
+                <a href="/PHP/index.php" class="btn btn-secondary">
+                    <i class="fas fa-home"></i> Voltar ao Início
+                </a>
+                <a href="criar.php" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Novo Curso
+                </a>
+            </div>
+        </div>
         
         <?php if (isset($_SESSION['mensagem'])): ?>
-            <div class="alert alert-<?php echo $_SESSION['tipo_mensagem']; ?>">
-                <?php echo $_SESSION['mensagem']; unset($_SESSION['mensagem']); unset($_SESSION['tipo_mensagem']); ?>
+            <div class="alert alert-<?= $_SESSION['tipo_mensagem'] === 'sucesso' ? 'success' : 'error' ?>">
+                <i class="fas <?= $_SESSION['tipo_mensagem'] === 'sucesso' ? 'fa-check-circle' : 'fa-exclamation-circle' ?>"></i>
+                <?= $_SESSION['mensagem'] ?>
+                <?php unset($_SESSION['mensagem'], $_SESSION['tipo_mensagem']); ?>
             </div>
         <?php endif; ?>
         
-        <div class="toolbar">
-            <a href="criar.php" class="btn btn-primary"><i class="fas fa-plus"></i> Novo Curso</a>
-            
-            <form method="get" class="search-form">
-                <input type="text" name="busca" placeholder="Pesquisar..." value="<?php echo isset($_GET['busca']) ? $_GET['busca'] : ''; ?>">
+        <div class="cursos-toolbar">
+            <form method="get" class="cursos-search">
+                <input type="text" name="busca" placeholder="Pesquisar cursos..." value="<?= isset($_GET['busca']) ? htmlspecialchars($_GET['busca']) : '' ?>">
                 <button type="submit"><i class="fas fa-search"></i></button>
             </form>
         </div>
         
-        <table class="data-table">
+        <table class="cursos-table">
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Nome</th>
                     <th>Código</th>
-                    <th>Duração (anos)</th>
+                    <th>Duração</th>
                     <th>Departamento</th>
                     <th>Coordenador</th>
                     <th>Status</th>
@@ -86,41 +97,62 @@ $stmt->execute();
             <tbody>
                 <?php while ($row = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
                     <tr>
-                        <td><?php echo $row['id']; ?></td>
-                        <td><?php echo $row['nome']; ?></td>
-                        <td><?php echo $row['codigo']; ?></td>
-                        <td><?php echo $row['duracao_anos']; ?></td>
-                        <td><?php echo $row['departamento']; ?></td>
-                        <td><?php echo $row['coordenador']; ?></td>
-                        <td><span class="status <?php echo $row['ativo'] ? 'ativo' : 'inativo'; ?>"><?php echo $row['ativo'] ? 'Ativo' : 'Inativo'; ?></span></td>
-                        <td class="actions">
-                            <a href="editar.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-edit"><i class="fas fa-edit"></i></a>
-                            <a href="excluir.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-delete" onclick="return confirm('Tem certeza que deseja excluir este curso?')"><i class="fas fa-trash"></i></a>
+                        <td><?= $row['id'] ?></td>
+                        <td><?= htmlspecialchars($row['nome']) ?></td>
+                        <td><?= htmlspecialchars($row['codigo']) ?></td>
+                        <td><?= $row['duracao_anos'] ?> ano(s)</td>
+                        <td><?= htmlspecialchars($row['departamento']) ?></td>
+                        <td><?= htmlspecialchars($row['coordenador']) ?></td>
+                        <td>
+                            <span class="status-badge status-<?= $row['ativo'] ? 'ativo' : 'inativo' ?>">
+                                <?= $row['ativo'] ? 'Ativo' : 'Inativo' ?>
+                            </span>
+                        </td>
+                        <td class="cursos-actions-cell">
+                            <a href="editar.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-edit" title="Editar">
+                                <i class="fas fa-edit">Editar</i>
+                            </a>
+                            <a href="excluir.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-delete" title="Excluir" onclick="return confirm('Tem certeza que deseja excluir este curso?')">
+                                <i class="fas fa-trash">Excuir</i>
+                            </a>
                         </td>
                     </tr>
                 <?php endwhile; ?>
                 
                 <?php if ($stmt->rowCount() == 0): ?>
-                    <tr><td colspan="8">Nenhum curso encontrado</td></tr>
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: #6c757d;">
+                            <i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>
+                            Nenhum curso encontrado
+                        </td>
+                    </tr>
                 <?php endif; ?>
             </tbody>
         </table>
         
-        <div class="pagination">
-            <?php if ($pagina > 1): ?>
-                <a href="?pagina=<?php echo $pagina - 1; ?><?php echo isset($_GET['busca']) ? '&busca=' . $_GET['busca'] : ''; ?>" class="btn">&laquo; Anterior</a>
-            <?php endif; ?>
-            
-            <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
-                <a href="?pagina=<?php echo $i; ?><?php echo isset($_GET['busca']) ? '&busca=' . $_GET['busca'] : ''; ?>" class="btn <?php echo $i == $pagina ? 'active' : ''; ?>"><?php echo $i; ?></a>
-            <?php endfor; ?>
-            
-            <?php if ($pagina < $total_paginas): ?>
-                <a href="?pagina=<?php echo $pagina + 1; ?><?php echo isset($_GET['busca']) ? '&busca=' . $_GET['busca'] : ''; ?>" class="btn">Próxima &raquo;</a>
-            <?php endif; ?>
-        </div>
+        <?php if ($total_paginas > 1): ?>
+            <div class="cursos-pagination">
+                <?php if ($pagina > 1): ?>
+                    <a href="?pagina=<?= $pagina - 1 ?><?= isset($_GET['busca']) ? '&busca=' . htmlspecialchars($_GET['busca']) : '' ?>" class="btn btn-secondary">
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </a>
+                <?php endif; ?>
+                
+                <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
+                    <a href="?pagina=<?= $i ?><?= isset($_GET['busca']) ? '&busca=' . htmlspecialchars($_GET['busca']) : '' ?>" class="btn <?= $i == $pagina ? 'btn-primary' : 'btn-secondary' ?>">
+                        <?= $i ?>
+                    </a>
+                <?php endfor; ?>
+                
+                <?php if ($pagina < $total_paginas): ?>
+                    <a href="?pagina=<?= $pagina + 1 ?><?= isset($_GET['busca']) ? '&busca=' . htmlspecialchars($_GET['busca']) : '' ?>" class="btn btn-secondary">
+                        Próxima <i class="fas fa-chevron-right"></i>
+                    </a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
     </div>
     
-    <script src="../../Context/JS/script.js"></script>
+    <script src="/Context/JS/script.js"></script>
 </body>
 </html>

@@ -1,37 +1,55 @@
 <?php
-// Primeiro incluímos o db.php para ter acesso à classe Database
-require_once __DIR__ . '/db.php';
-
-// Configurações do sistema
+// Configurações básicas
+define('BASE_URL', '');
 define('SISTEMA_NOME', 'SIGEPOLI');
 define('SISTEMA_VERSAO', '1.0.0');
-define('SISTEMA_CODIGO', '');
 
-// Configurações de sessão - removemos session_start() daqui
+// Inclui o db.php primeiro
+require_once __DIR__ . '/db.php';
+
+// Controle de sessão
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// Funções de redirecionamento
+function redirect($path) {
+    header("Location: " . BASE_URL . $path);
+    exit();
+}
 
-// Verificar se o usuário está logado para páginas restritas
 function verificarLogin() {
     if (!isset($_SESSION['usuario_id'])) {
-        header("Location: ../login.php");
-        exit();
+        redirect('/PHP/login.php');
     }
 }
 
-// Verificar nível de acesso
 function verificarAcesso($nivel_requerido) {
     if ($_SESSION['nivel_acesso'] < $nivel_requerido) {
         $_SESSION['mensagem'] = "Acesso negado. Permissões insuficientes.";
         $_SESSION['tipo_mensagem'] = "erro";
-        header("Location: ../index.php");
-        exit();
+        redirect('/PHP/index.php');
     }
+}
+
+// Função para verificar BI existente
+function verificarBIExistente($bi, $excludeId = null) {
+    $database = new Database();
+    $db = $database->getConnection();
+    
+    $query = "SELECT COUNT(*) FROM alunos WHERE bi = :bi AND ativo = 1";
+    if ($excludeId) {
+        $query .= " AND id != :id";
+    }
+    
+    $stmt = $db->prepare($query);
+    $stmt->bindParam(":bi", $bi);
+    if ($excludeId) {
+        $stmt->bindParam(":id", $excludeId);
+    }
+    $stmt->execute();
+    
+    return $stmt->fetchColumn() > 0;
 }
 
 // Registrar ações na auditoria

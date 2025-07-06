@@ -1,56 +1,48 @@
 <?php
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../db.php';
+
 verificarLogin();
-verificarAcesso(5);
+verificarAcesso(3); // Nível 3 para exclusão
 
-$id = isset($_GET['id']) ? $_GET['id'] : null;
-
-if (!$id) {
+if (!isset($_GET['id'])) {
     header("Location: index.php");
     exit();
 }
 
-$database = new Database();
-$db = $database->getConnection();
+$id = $_GET['id'];
 
-// Buscar aluno antes de excluir para auditoria
-$query = "SELECT * FROM alunos WHERE id = :id";
-$stmt = $db->prepare($query);
-$stmt->bindParam(":id", $id);
-$stmt->execute();
-$aluno = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if ($aluno) {
-    // Verificar se o aluno tem matrículas ativas
-    $query_matriculas = "SELECT COUNT(*) as total FROM matriculas WHERE aluno_id = :aluno_id AND status = 'Ativa'";
-    $stmt_matriculas = $db->prepare($query_matriculas);
-    $stmt_matriculas->bindParam(":aluno_id", $id);
-    $stmt_matriculas->execute();
-    $matriculas = $stmt_matriculas->fetch(PDO::FETCH_ASSOC);
+try {
+    $database = new Database();
+    $db = $database->getConnection();
     
-    if ($matriculas['total'] > 0) {
-        $_SESSION['mensagem'] = "Não é possível excluir o aluno pois existem matrículas ativas vinculadas a ele!";
+    // Verificar se o aluno existe
+    $stmt = $db->prepare("SELECT id FROM alunos WHERE id = :id AND ativo = 1");
+    $stmt->bindParam(":id", $id);
+    $stmt->execute();
+    
+    if ($stmt->rowCount() === 0) {
+        $_SESSION['mensagem'] = "Aluno não encontrado ou já excluído";
         $_SESSION['tipo_mensagem'] = "erro";
         header("Location: index.php");
         exit();
     }
     
-    // Marcar como inativo em vez de excluir fisicamente
+    // Exclusão lógica
     $query = "UPDATE alunos SET ativo = 0 WHERE id = :id";
     $stmt = $db->prepare($query);
     $stmt->bindParam(":id", $id);
     
     if ($stmt->execute()) {
-        registrarAuditoria('Exclusão', 'alunos', $id, json_encode($aluno), null);
-        
-        $_SESSION['mensagem'] = "Aluno marcado como inativo com sucesso!";
+        registrarAuditoria('Excluir', 'alunos', $id);
+        $_SESSION['mensagem'] = "Aluno excluído com sucesso!";
         $_SESSION['tipo_mensagem'] = "sucesso";
     } else {
-        $_SESSION['mensagem'] = "Erro ao marcar aluno como inativo!";
+        $_SESSION['mensagem'] = "Erro ao excluir aluno";
         $_SESSION['tipo_mensagem'] = "erro";
     }
-} else {
-    $_SESSION['mensagem'] = "Aluno não encontrado!";
+} catch(PDOException $e) {
+    $_SESSION['mensagem'] = "Erro no banco de dados: " . $e->getMessage();
     $_SESSION['tipo_mensagem'] = "erro";
 }
 

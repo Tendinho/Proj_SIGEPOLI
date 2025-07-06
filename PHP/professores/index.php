@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../config.php';
 verificarLogin();
-verificarAcesso(5); // Nível de acesso mínimo para professores
+verificarAcesso(5);
 
 $database = new Database();
 $db = $database->getConnection();
@@ -43,31 +43,42 @@ $stmt->execute();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Professores - SIGEPOLI</title>
-    <link rel="stylesheet" href="../../Context/CSS/style.css">
-    <link rel="stylesheet" href="../../Context/CSS/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/Context/CSS/professores.css">
+    <link rel="stylesheet" href="/Context/CSS/styles.css">
+    <link rel="stylesheet" href="/Context/fontawesome/css/all.min.css">
 </head>
 <body>
-    <?php include_once '../../includes/header.php'; ?>
-    
-    <div class="content">
-        <h1><i class="fas fa-chalkboard-teacher"></i> Gestão de Professores</h1>
+    <div class="professores-container">
+        <div class="professores-header">
+            <h1 class="professores-title">
+                <i class="fas fa-chalkboard-teacher"></i> Gestão de Professores
+            </h1>
+            <div class="professores-actions">
+                <a href="/PHP/index.php" class="btn btn-secondary">
+                    <i class="fas fa-home"></i> Voltar ao Início
+                </a>
+                <a href="criar.php" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Novo Professor
+                </a>
+            </div>
+        </div>
         
         <?php if (isset($_SESSION['mensagem'])): ?>
-            <div class="alert alert-<?php echo $_SESSION['tipo_mensagem']; ?>">
-                <?php echo $_SESSION['mensagem']; unset($_SESSION['mensagem']); unset($_SESSION['tipo_mensagem']); ?>
+            <div class="alert alert-<?= $_SESSION['tipo_mensagem'] === 'sucesso' ? 'success' : 'error' ?>">
+                <i class="fas <?= $_SESSION['tipo_mensagem'] === 'sucesso' ? 'fa-check-circle' : 'fa-exclamation-circle' ?>"></i>
+                <?= $_SESSION['mensagem'] ?>
+                <?php unset($_SESSION['mensagem'], $_SESSION['tipo_mensagem']); ?>
             </div>
         <?php endif; ?>
         
-        <div class="toolbar">
-            <a href="criar.php" class="btn btn-primary"><i class="fas fa-plus"></i> Novo Professor</a>
-            
-            <form method="get" class="search-form">
-                <input type="text" name="busca" placeholder="Pesquisar..." value="<?php echo isset($_GET['busca']) ? $_GET['busca'] : ''; ?>">
+        <div class="professores-toolbar">
+            <form method="get" class="professores-search">
+                <input type="text" name="busca" placeholder="Pesquisar professores..." value="<?= isset($_GET['busca']) ? htmlspecialchars($_GET['busca']) : '' ?>">
                 <button type="submit"><i class="fas fa-search"></i></button>
             </form>
         </div>
         
-        <table class="data-table">
+        <table class="professores-table">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -83,41 +94,62 @@ $stmt->execute();
             <tbody>
                 <?php while ($row = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
                     <tr>
-                        <td><?php echo $row['id']; ?></td>
-                        <td><?php echo $row['nome_completo']; ?></td>
-                        <td><?php echo $row['bi']; ?></td>
-                        <td><?php echo $row['titulacao']; ?></td>
-                        <td><?php echo $row['area_especializacao']; ?></td>
-                        <td><?php echo date('d/m/Y', strtotime($row['data_contratacao'])); ?></td>
-                        <td><span class="status <?php echo $row['ativo'] ? 'ativo' : 'inativo'; ?>"><?php echo $row['ativo'] ? 'Ativo' : 'Inativo'; ?></span></td>
-                        <td class="actions">
-                            <a href="editar.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-edit"><i class="fas fa-edit"></i></a>
-                            <a href="excluir.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-delete" onclick="return confirm('Tem certeza que deseja excluir este professor?')"><i class="fas fa-trash"></i></a>
+                        <td><?= $row['id'] ?></td>
+                        <td><?= htmlspecialchars($row['nome_completo']) ?></td>
+                        <td><?= htmlspecialchars($row['bi']) ?></td>
+                        <td><?= htmlspecialchars($row['titulacao']) ?></td>
+                        <td><?= htmlspecialchars($row['area_especializacao']) ?></td>
+                        <td><?= date('d/m/Y', strtotime($row['data_contratacao'])) ?></td>
+                        <td>
+                            <span class="status-badge status-<?= $row['ativo'] ? 'ativo' : 'inativo' ?>">
+                                <?= $row['ativo'] ? 'Ativo' : 'Inativo' ?>
+                            </span>
+                        </td>
+                        <td class="professores-actions-cell">
+                            <a href="editar.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-edit" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="excluir.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-delete" title="Excluir" onclick="return confirm('Tem certeza que deseja excluir este professor?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
                         </td>
                     </tr>
                 <?php endwhile; ?>
                 
                 <?php if ($stmt->rowCount() == 0): ?>
-                    <tr><td colspan="8">Nenhum professor encontrado</td></tr>
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: #6c757d;">
+                            <i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>
+                            Nenhum professor encontrado
+                        </td>
+                    </tr>
                 <?php endif; ?>
             </tbody>
         </table>
         
-        <div class="pagination">
-            <?php if ($pagina > 1): ?>
-                <a href="?pagina=<?php echo $pagina - 1; ?><?php echo isset($_GET['busca']) ? '&busca=' . $_GET['busca'] : ''; ?>" class="btn">&laquo; Anterior</a>
-            <?php endif; ?>
-            
-            <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
-                <a href="?pagina=<?php echo $i; ?><?php echo isset($_GET['busca']) ? '&busca=' . $_GET['busca'] : ''; ?>" class="btn <?php echo $i == $pagina ? 'active' : ''; ?>"><?php echo $i; ?></a>
-            <?php endfor; ?>
-            
-            <?php if ($pagina < $total_paginas): ?>
-                <a href="?pagina=<?php echo $pagina + 1; ?><?php echo isset($_GET['busca']) ? '&busca=' . $_GET['busca'] : ''; ?>" class="btn">Próxima &raquo;</a>
-            <?php endif; ?>
-        </div>
+        <?php if ($total_paginas > 1): ?>
+            <div class="professores-pagination">
+                <?php if ($pagina > 1): ?>
+                    <a href="?pagina=<?= $pagina - 1 ?><?= isset($_GET['busca']) ? '&busca=' . htmlspecialchars($_GET['busca']) : '' ?>" class="btn btn-secondary">
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </a>
+                <?php endif; ?>
+                
+                <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
+                    <a href="?pagina=<?= $i ?><?= isset($_GET['busca']) ? '&busca=' . htmlspecialchars($_GET['busca']) : '' ?>" class="btn <?= $i == $pagina ? 'btn-primary' : 'btn-secondary' ?>">
+                        <?= $i ?>
+                    </a>
+                <?php endfor; ?>
+                
+                <?php if ($pagina < $total_paginas): ?>
+                    <a href="?pagina=<?= $pagina + 1 ?><?= isset($_GET['busca']) ? '&busca=' . htmlspecialchars($_GET['busca']) : '' ?>" class="btn btn-secondary">
+                        Próxima <i class="fas fa-chevron-right"></i>
+                    </a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
     </div>
     
-    <script src="../../Context/JS/script.js"></script>
+    <script src="/Context/JS/script.js"></script>
 </body>
 </html>

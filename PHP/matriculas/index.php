@@ -64,36 +64,47 @@ $stmt_anos->execute();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Matrículas - SIGEPOLI</title>
-    <link rel="stylesheet" href="../../Context/CSS/style.css">
-    <link rel="stylesheet" href="../../Context/CSS/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/Context/CSS/styles.css">
+    <link rel="stylesheet" href="/Context/CSS/matriculas.css">
+    <link rel="stylesheet" href="/Context/fontawesome/css/all.min.css">
 </head>
 <body>
-    <?php include_once '../../includes/header.php'; ?>
-    
-    <div class="content">
-        <h1><i class="fas fa-clipboard-list"></i> Gestão de Matrículas</h1>
+    <div class="matriculas-container">
+        <div class="matriculas-header">
+            <h1 class="matriculas-title">
+                <i class="fas fa-clipboard-list"></i> Gestão de Matrículas
+            </h1>
+            <div class="matriculas-actions">
+                <a href="/PHP/index.php" class="btn btn-secondary">
+                    <i class="fas fa-home"></i> Voltar ao Início
+                </a>
+                <a href="criar.php" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nova Matrícula
+                </a>
+            </div>
+        </div>
         
         <?php if (isset($_SESSION['mensagem'])): ?>
-            <div class="alert alert-<?php echo $_SESSION['tipo_mensagem']; ?>">
-                <?php echo $_SESSION['mensagem']; unset($_SESSION['mensagem']); unset($_SESSION['tipo_mensagem']); ?>
+            <div class="alert alert-<?= $_SESSION['tipo_mensagem'] === 'sucesso' ? 'success' : 'error' ?>">
+                <i class="fas <?= $_SESSION['tipo_mensagem'] === 'sucesso' ? 'fa-check-circle' : 'fa-exclamation-circle' ?>"></i>
+                <?= $_SESSION['mensagem'] ?>
+                <?php unset($_SESSION['mensagem'], $_SESSION['tipo_mensagem']); ?>
             </div>
         <?php endif; ?>
         
-        <div class="toolbar">
-            <a href="criar.php" class="btn btn-primary"><i class="fas fa-plus"></i> Nova Matrícula</a>
-            
+        <div class="matriculas-toolbar">
             <form method="get" class="search-form">
                 <div class="form-row">
                     <div class="form-group">
-                        <input type="text" name="busca" placeholder="Pesquisar..." value="<?php echo isset($_GET['busca']) ? $_GET['busca'] : ''; ?>">
+                        <input type="text" name="busca" placeholder="Pesquisar aluno, turma ou curso" value="<?= isset($_GET['busca']) ? htmlspecialchars($_GET['busca']) : '' ?>">
                     </div>
                     
                     <div class="form-group">
                         <select name="ano_letivo">
-                            <option value="">Todos os anos</option>
+                            <option value="">Todos os anos letivos</option>
                             <?php while ($ano = $stmt_anos->fetch(PDO::FETCH_ASSOC)): ?>
-                                <option value="<?php echo $ano['ano_letivo']; ?>" <?php echo isset($_GET['ano_letivo']) && $_GET['ano_letivo'] == $ano['ano_letivo'] ? 'selected' : ''; ?>>
-                                    <?php echo $ano['ano_letivo']; ?>
+                                <option value="<?= $ano['ano_letivo'] ?>" <?= isset($_GET['ano_letivo']) && $_GET['ano_letivo'] == $ano['ano_letivo'] ? 'selected' : '' ?>>
+                                    <?= $ano['ano_letivo'] ?>
                                 </option>
                             <?php endwhile; ?>
                         </select>
@@ -101,18 +112,20 @@ $stmt_anos->execute();
                     
                     <div class="form-group">
                         <select name="semestre">
-                            <option value="">Todos semestres</option>
-                            <option value="1" <?php echo isset($_GET['semestre']) && $_GET['semestre'] == 1 ? 'selected' : ''; ?>>1º Semestre</option>
-                            <option value="2" <?php echo isset($_GET['semestre']) && $_GET['semestre'] == 2 ? 'selected' : ''; ?>>2º Semestre</option>
+                            <option value="">Todos os semestres</option>
+                            <option value="1" <?= isset($_GET['semestre']) && $_GET['semestre'] == 1 ? 'selected' : '' ?>>1º Semestre</option>
+                            <option value="2" <?= isset($_GET['semestre']) && $_GET['semestre'] == 2 ? 'selected' : '' ?>>2º Semestre</option>
                         </select>
                     </div>
                     
-                    <button type="submit"><i class="fas fa-search"></i> Filtrar</button>
+                    <button type="submit">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
                 </div>
             </form>
         </div>
         
-        <table class="data-table">
+        <table class="matriculas-table">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -130,48 +143,69 @@ $stmt_anos->execute();
             <tbody>
                 <?php while ($row = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
                     <tr>
-                        <td><?php echo $row['id']; ?></td>
-                        <td><?php echo $row['aluno']; ?></td>
-                        <td><?php echo $row['turma']; ?></td>
-                        <td><?php echo $row['curso']; ?></td>
-                        <td><?php echo $row['ano_letivo']; ?></td>
-                        <td><?php echo $row['semestre']; ?>º</td>
-                        <td><?php echo date('d/m/Y', strtotime($row['data_matricula'])); ?></td>
+                        <td><?= $row['id'] ?></td>
+                        <td><?= htmlspecialchars($row['aluno']) ?></td>
+                        <td><?= htmlspecialchars($row['turma']) ?></td>
+                        <td><?= htmlspecialchars($row['curso']) ?></td>
+                        <td><?= $row['ano_letivo'] ?></td>
+                        <td><?= $row['semestre'] ?>º</td>
+                        <td><?= date('d/m/Y', strtotime($row['data_matricula'])) ?></td>
                         <td>
-                            <?php echo number_format($row['valor_propina'], 2, ',', '.'); ?> Kz
-                            <span class="status <?php echo $row['propina_paga'] ? 'ativo' : 'inativo'; ?>">
-                                <?php echo $row['propina_paga'] ? 'Paga' : 'Pendente'; ?>
+                            <span class="monetary-value"><?= number_format($row['valor_propina'], 2, ',', '.') ?> Kz</span>
+                            <span class="status-badge status-<?= $row['propina_paga'] ? 'paga' : 'pendente' ?>">
+                                <?= $row['propina_paga'] ? 'Paga' : 'Pendente' ?>
                             </span>
                         </td>
-                        <td><span class="status <?php echo strtolower($row['status']); ?>"><?php echo $row['status']; ?></span></td>
-                        <td class="actions">
-                            <a href="editar.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-edit"><i class="fas fa-edit"></i></a>
-                            <a href="excluir.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-delete" onclick="return confirm('Tem certeza que deseja excluir esta matrícula?')"><i class="fas fa-trash"></i></a>
+                        <td>
+                            <span class="status-badge status-<?= strtolower($row['status']) ?>">
+                                <?= $row['status'] ?>
+                            </span>
+                        </td>
+                        <td class="matriculas-actions-cell">
+                            <a href="editar.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-edit" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="excluir.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-delete" title="Excluir" onclick="return confirm('Tem certeza que deseja excluir esta matrícula?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
                         </td>
                     </tr>
                 <?php endwhile; ?>
                 
                 <?php if ($stmt->rowCount() == 0): ?>
-                    <tr><td colspan="10">Nenhuma matrícula encontrada</td></tr>
+                    <tr>
+                        <td colspan="10" style="text-align: center; padding: 2rem; color: #6c757d;">
+                            <i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>
+                            Nenhuma matrícula encontrada
+                        </td>
+                    </tr>
                 <?php endif; ?>
             </tbody>
         </table>
         
-        <div class="pagination">
-            <?php if ($pagina > 1): ?>
-                <a href="?pagina=<?php echo $pagina - 1; ?><?php echo isset($_GET['busca']) ? '&busca=' . $_GET['busca'] : ''; ?><?php echo isset($_GET['ano_letivo']) ? '&ano_letivo=' . $_GET['ano_letivo'] : ''; ?><?php echo isset($_GET['semestre']) ? '&semestre=' . $_GET['semestre'] : ''; ?>" class="btn">&laquo; Anterior</a>
-            <?php endif; ?>
-            
-            <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
-                <a href="?pagina=<?php echo $i; ?><?php echo isset($_GET['busca']) ? '&busca=' . $_GET['busca'] : ''; ?><?php echo isset($_GET['ano_letivo']) ? '&ano_letivo=' . $_GET['ano_letivo'] : ''; ?><?php echo isset($_GET['semestre']) ? '&semestre=' . $_GET['semestre'] : ''; ?>" class="btn <?php echo $i == $pagina ? 'active' : ''; ?>"><?php echo $i; ?></a>
-            <?php endfor; ?>
-            
-            <?php if ($pagina < $total_paginas): ?>
-                <a href="?pagina=<?php echo $pagina + 1; ?><?php echo isset($_GET['busca']) ? '&busca=' . $_GET['busca'] : ''; ?><?php echo isset($_GET['ano_letivo']) ? '&ano_letivo=' . $_GET['ano_letivo'] : ''; ?><?php echo isset($_GET['semestre']) ? '&semestre=' . $_GET['semestre'] : ''; ?>" class="btn">Próxima &raquo;</a>
-            <?php endif; ?>
-        </div>
+        <?php if ($total_paginas > 1): ?>
+            <div class="matriculas-pagination">
+                <?php if ($pagina > 1): ?>
+                    <a href="?pagina=<?= $pagina - 1 ?><?= isset($_GET['busca']) ? '&busca=' . htmlspecialchars($_GET['busca']) : '' ?><?= isset($_GET['ano_letivo']) ? '&ano_letivo=' . htmlspecialchars($_GET['ano_letivo']) : '' ?><?= isset($_GET['semestre']) ? '&semestre=' . htmlspecialchars($_GET['semestre']) : '' ?>" class="btn btn-secondary">
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </a>
+                <?php endif; ?>
+                
+                <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
+                    <a href="?pagina=<?= $i ?><?= isset($_GET['busca']) ? '&busca=' . htmlspecialchars($_GET['busca']) : '' ?><?= isset($_GET['ano_letivo']) ? '&ano_letivo=' . htmlspecialchars($_GET['ano_letivo']) : '' ?><?= isset($_GET['semestre']) ? '&semestre=' . htmlspecialchars($_GET['semestre']) : '' ?>" class="btn <?= $i == $pagina ? 'btn-primary' : 'btn-secondary' ?>">
+                        <?= $i ?>
+                    </a>
+                <?php endfor; ?>
+                
+                <?php if ($pagina < $total_paginas): ?>
+                    <a href="?pagina=<?= $pagina + 1 ?><?= isset($_GET['busca']) ? '&busca=' . htmlspecialchars($_GET['busca']) : '' ?><?= isset($_GET['ano_letivo']) ? '&ano_letivo=' . htmlspecialchars($_GET['ano_letivo']) : '' ?><?= isset($_GET['semestre']) ? '&semestre=' . htmlspecialchars($_GET['semestre']) : '' ?>" class="btn btn-secondary">
+                        Próxima <i class="fas fa-chevron-right"></i>
+                    </a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
     </div>
     
-    <script src="../../Context/JS/script.js"></script>
+    <script src="/Context/JS/script.js"></script>
 </body>
 </html>

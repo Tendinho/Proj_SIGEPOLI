@@ -1,0 +1,292 @@
+/* Estilos específicos para o módulo de cursos */
+.cursos-container {
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.cursos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #eaeef2;
+}
+
+.cursos-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.cursos-title i {
+    color: #4361ee;
+}
+
+.cursos-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* Barra de ferramentas */
+.cursos-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.cursos-search {
+    display: flex;
+    align-items: center;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.cursos-search:focus-within {
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+}
+
+.cursos-search input {
+    border: none;
+    background: transparent;
+    padding: 0.5rem 1rem;
+    width: 250px;
+    font-size: 0.95rem;
+    outline: none;
+}
+
+.cursos-search button {
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: color 0.2s;
+}
+
+.cursos-search button:hover {
+    color: #4361ee;
+}
+
+/* Tabela de cursos */
+.cursos-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 1.5rem 0;
+    font-size: 0.95rem;
+}
+
+.cursos-table thead th {
+    background-color: #4361ee;
+    color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 500;
+    position: sticky;
+    top: 0;
+}
+
+.cursos-table th:first-child {
+    border-top-left-radius: 8px;
+}
+
+.cursos-table th:last-child {
+    border-top-right-radius: 8px;
+}
+
+.cursos-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #eaeef2;
+    vertical-align: middle;
+}
+
+.cursos-table tr:last-child td {
+    border-bottom: none;
+}
+
+.cursos-table tr:hover td {
+    background-color: #f8faff;
+}
+
+/* Status */
+.status-badge {
+    display: inline-block;
+    padding: 0.35rem 0.7rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-ativo {
+    background-color: #e6f7ee;
+    color: #0d8a4d;
+}
+
+.status-inativo {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+/* Ações */
+.cursos-actions-cell {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Paginação */
+.cursos-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+/* Botões */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration: none;
+    gap: 0.5rem;
+}
+
+.btn i {
+    font-size: 0.9em;
+}
+
+.btn-primary {
+    background-color: #4361ee;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #3a56d4;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.2);
+}
+
+.btn-secondary {
+    background-color: white;
+    color: #4361ee;
+    border: 1px solid #4361ee;
+}
+
+.btn-secondary:hover {
+    background-color: #f0f4ff;
+}
+
+.btn-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.btn-edit {
+    background-color: #f0ad4e;
+    color: white;
+}
+
+.btn-edit:hover {
+    background-color: #ec971f;
+}
+
+.btn-delete {
+    background-color: #d9534f;
+    color: white;
+}
+
+.btn-delete:hover {
+    background-color: #c9302c;
+}
+
+/* Alertas */
+.alert {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.alert i {
+    font-size: 1.2rem;
+}
+
+.alert-success {
+    background-color: #e6ffed;
+    color: #1b5e20;
+    border-left: 4px solid #4bb543;
+}
+
+.alert-error {
+    background-color: #ffebee;
+    color: #c62828;
+    border-left: 4px solid #d9534f;
+}
+
+/* Responsividade */
+@media (max-width: 992px) {
+    .cursos-container {
+        padding: 1.5rem;
+    }
+    
+    .cursos-table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .cursos-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .cursos-search {
+        width: 100%;
+    }
+    
+    .cursos-search input {
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .cursos-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .cursos-actions {
+        width: 100%;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -1,0 +1,339 @@
+/* Estilos específicos para o módulo de matrículas */
+.matriculas-container {
+    max-width: 1600px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.matriculas-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #eaeef2;
+}
+
+.matriculas-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.matriculas-title i {
+    color: #7209b7;
+}
+
+.matriculas-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* Barra de ferramentas */
+.matriculas-toolbar {
+    margin-bottom: 1.5rem;
+}
+
+.search-form {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.form-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.65rem 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #7209b7;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(114, 9, 183, 0.15);
+}
+
+.search-form button {
+    background-color: #7209b7;
+    color: white;
+    border: none;
+    padding: 0.65rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.search-form button:hover {
+    background-color: #5a0895;
+    transform: translateY(-2px);
+}
+
+/* Tabela de matrículas */
+.matriculas-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 1.5rem 0;
+    font-size: 0.95rem;
+}
+
+.matriculas-table thead th {
+    background-color: #7209b7;
+    color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 500;
+    position: sticky;
+    top: 0;
+}
+
+.matriculas-table th:first-child {
+    border-top-left-radius: 8px;
+}
+
+.matriculas-table th:last-child {
+    border-top-right-radius: 8px;
+}
+
+.matriculas-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #eaeef2;
+    vertical-align: middle;
+}
+
+.matriculas-table tr:last-child td {
+    border-bottom: none;
+}
+
+.matriculas-table tr:hover td {
+    background-color: #f9f0ff;
+}
+
+/* Status */
+.status-badge {
+    display: inline-block;
+    padding: 0.35rem 0.7rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-ativo {
+    background-color: #e6f7ee;
+    color: #0d8a4d;
+}
+
+.status-inativo {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+.status-paga {
+    background-color: #e6f7ee;
+    color: #0d8a4d;
+}
+
+.status-pendente {
+    background-color: #fff3e0;
+    color: #e65100;
+}
+
+.status-ativo,
+.status-concluido {
+    background-color: #e6f7ee;
+    color: #0d8a4d;
+}
+
+.status-trancado {
+    background-color: #e3f2fd;
+    color: #1565c0;
+}
+
+.status-cancelado {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+/* Ações */
+.matriculas-actions-cell {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Paginação */
+.matriculas-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+/* Botões */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    text-decoration: none;
+    gap: 0.5rem;
+}
+
+.btn i {
+    font-size: 0.9em;
+}
+
+.btn-primary {
+    background-color: #7209b7;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #5a0895;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(114, 9, 183, 0.2);
+}
+
+.btn-secondary {
+    background-color: white;
+    color: #7209b7;
+    border: 1px solid #7209b7;
+}
+
+.btn-secondary:hover {
+    background-color: #f9f0ff;
+}
+
+.btn-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.btn-edit {
+    background-color: #f0ad4e;
+    color: white;
+}
+
+.btn-edit:hover {
+    background-color: #ec971f;
+}
+
+.btn-delete {
+    background-color: #d9534f;
+    color: white;
+}
+
+.btn-delete:hover {
+    background-color: #c9302c;
+}
+
+/* Alertas */
+.alert {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.alert i {
+    font-size: 1.2rem;
+}
+
+.alert-success {
+    background-color: #e6ffed;
+    color: #1b5e20;
+    border-left: 4px solid #4bb543;
+}
+
+.alert-error {
+    background-color: #ffebee;
+    color: #c62828;
+    border-left: 4px solid #d9534f;
+}
+
+/* Responsividade */
+@media (max-width: 1200px) {
+    .matriculas-container {
+        padding: 1.5rem;
+    }
+    
+    .matriculas-table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .matriculas-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .matriculas-actions {
+        width: 100%;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .form-group {
+        min-width: 100%;
+    }
+    
+    .search-form button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Valor monetário */
+.monetary-value {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    color: #2c3e50;
+}

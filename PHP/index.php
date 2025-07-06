@@ -47,7 +47,7 @@ verificarLogin();
                     
                     <!-- Configurações -->
                     <li class="menu-section"><i class="fas fa-cog"></i> Sistema</li>
-                    <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
+                    <li><a href="/PHP/logout.php"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
                 </ul>
             </nav>
         </div>
@@ -61,7 +61,7 @@ verificarLogin();
                 
                 <div class="user-info">
                     <span><?php echo $_SESSION['nome_completo']; ?></span>
-                    <img src="../Context/IMG/user-default.png" alt="User">
+                    <img src="/Context/IMG/user-default.png" alt="User">
                 </div>
             </header>
             

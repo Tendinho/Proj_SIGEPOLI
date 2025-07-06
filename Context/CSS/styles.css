@@ -532,6 +532,35 @@ textarea {
     background-color: #2980b9;
 }
 
+.actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 0.875rem;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
     .dashboard {
