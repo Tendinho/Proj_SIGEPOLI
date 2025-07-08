@@ -128,6 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p><?= htmlspecialchars($_SESSION['nome_completo'] ?? 'Usuário') ?></p>
                 <p class="nivel-acesso">Nível: <?= $_SESSION['nivel_acesso'] ?? '0' ?></p>
             </div>
+            <a href="/PHP/index.php" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Voltar</a>
         </div>
         
         <div class="main-content">

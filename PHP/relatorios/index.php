@@ -57,6 +57,6 @@ $db = $database->getConnection();
         </div>
     </div>
     
-    <script src="../../Context/JS/script.js"></script>
+    <script src="/Context/JS/script.js"></script>
 </body>
 </html>

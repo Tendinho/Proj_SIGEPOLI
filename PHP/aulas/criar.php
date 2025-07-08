@@ -47,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
 <!DOCTYPE html>
 <html lang="pt">
 <head><meta charset="UTF-8"><title>Nova Aula</title></head>
+<link rel="stylesheet" href="/Context/CSS/styles.css">
 <body>
   <h1>Criar Aula</h1>
   <?php if(isset($_SESSION['mensagem'])): ?>

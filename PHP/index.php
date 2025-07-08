@@ -51,9 +51,10 @@ verificarLogin();
                     
                     <!-- Relatórios -->
                     <li class="menu-section"><i class="fas fa-chart-bar"></i> Relatórios</li>
-                    <li><a href="/PHP/relatorios/"><i class="fas fa-graduation-cap"></i> Carga Horária</a></li>
-                    <li><a href="/PHP/relatorios/"><i class="fas fa-coins"></i> custos</a></li>
-                    <li><a href="/PHP/relatorios/"><i class="fas fa-chart-line"></i> Desempenho</a></li>
+                     <li><a href="/PHP/relatorios/index.php"><i class="fas fa-graduation-cap"></i> Home</a></li>
+                    <li><a href="/PHP/relatorios/carga_horaria.php"><i class="fas fa-graduation-cap"></i> Carga Horária</a></li>
+                    <li><a href="/PHP/relatorios/custo.php"><i class="fas fa-coins"></i> custos</a></li>
+                    <li><a href="/PHP/relatorios/desempenho.php"><i class="fas fa-chart-line"></i> Desempenho</a></li>
                     
                     <!-- Configurações -->
                     <li class="menu-section"><i class="fas fa-cog"></i> Sistema</li>

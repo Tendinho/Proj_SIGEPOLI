@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../db.php';
 verificarLogin();
 verificarAcesso(5); // Nível de acesso para gestão operacional
 
@@ -67,12 +66,11 @@ if ($empresa_id) {
     $contratos = [];
 }
 
-// Buscar pagamentos
+// Buscar pagamentos (consulta corrigida)
 $sql = "SELECT p.id, e.nome AS empresa, c.numero_contrato,
                p.mes_referencia, p.ano_referencia, p.valor_pago,
                p.sla_atingido, p.multa_aplicada, p.status,
-               p.data_pagamento, p.metodo_pagamento,
-               p.comprovante_path, p.observacoes,
+               p.data_pagamento, p.observacoes,
                DATEDIFF(p.data_pagamento, CONCAT(p.ano_referencia, '-', LPAD(p.mes_referencia, 2, '0'), '-05')) AS dias_atraso
         FROM pagamentos_empresas p
         JOIN contratos c ON p.contrato_id = c.id
@@ -100,29 +98,229 @@ foreach ($params as $key => $value) {
 }
 $stmt->execute();
 $totais = $stmt->fetch(PDO::FETCH_ASSOC);
+
+function nomeMes($mes) {
+    $meses = [
+        1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março', 4 => 'Abril',
+        5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
+        9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro'
+    ];
+    return $meses[$mes] ?? '';
+}
+
+function getStatusBadgeClass($status) {
+    switch ($status) {
+        case 'Pago': return 'success';
+        case 'Pendente': return 'warning';
+        case 'Atrasado': return 'danger';
+        case 'Cancelado': return 'secondary';
+        default: return 'info';
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Pagamentos a Empresas - SIGEPOLI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagamentos a Empresas - <?= SISTEMA_NOME ?></title>
     <link rel="stylesheet" href="/Context/CSS/styles.css">
     <link rel="stylesheet" href="/Context/fontawesome/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            display: inline-block;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-primary {
+            background-color: #3498db;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .btn-back {
+            background-color: #7f8c8d;
+        }
+        .btn-back:hover {
+            background-color: #6c757d;
+        }
+        .btn-add {
+            background-color: #28a745;
+        }
+        .btn-add:hover {
+            background-color: #218838;
+        }
+        .btn-info {
+            background-color: #17a2b8;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .filter-form {
+            margin-bottom: 20px;
+        }
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            flex: 1;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .badge-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .badge-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .badge-secondary {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .totais {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        .totais span {
+            font-size: 14px;
+            padding: 5px 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .pagination {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .pagination a {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #007bff;
+        }
+        .pagination a.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+    </style>
 </head>
 <body>
-    <div class="content-header">
-        <h1><i class="fas fa-money-bill-wave"></i> Pagamentos a Empresas</h1>
-        <a href="criar.php" class="btn btn-primary"><i class="fas fa-plus"></i> Novo Pagamento</a>
-        <a href="relatorio.php?<?= http_build_query($_GET) ?>" class="btn btn-info" target="_blank">
-            <i class="fas fa-file-pdf"></i> Gerar Relatório
-        </a>
-    </div>
-
-    <div class="card">
-        <div class="card-header">
-            <h3><i class="fas fa-filter"></i> Filtros</h3>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-money-bill-wave"></i> Pagamentos a Empresas</h1>
+            <div>
+                <a href="criar.php" class="btn btn-add"><i class="fas fa-plus"></i> Novo Pagamento</a>
+                <a href="../index.php" class="btn btn-back"><i class="fas fa-arrow-left"></i> Voltar ao Menu</a>
+            </div>
         </div>
-        <div class="card-body">
+
+        <?php if (isset($_SESSION['mensagem'])): ?>
+            <div class="alert alert-<?= $_SESSION['tipo_mensagem'] ?>">
+                <?= htmlspecialchars($_SESSION['mensagem']) ?>
+                <?php unset($_SESSION['mensagem']); unset($_SESSION['tipo_mensagem']); ?>
+            </div>
+        <?php endif; ?>
+
+        <div class="card">
             <form method="get" class="filter-form">
                 <div class="form-row">
                     <div class="form-group">
@@ -182,23 +380,23 @@ $totais = $stmt->fetch(PDO::FETCH_ASSOC);
                 <a href="index.php" class="btn btn-secondary"><i class="fas fa-times"></i> Limpar</a>
             </form>
         </div>
-    </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h3><i class="fas fa-list"></i> Pagamentos</h3>
-            <div class="totais">
-                <span><strong>Total Pago:</strong> <?= number_format($totais['total_pago'] ?? 0, 2, ',', '.') ?> Kz</span>
-                <span><strong>Total Multas:</strong> <?= number_format($totais['total_multa'] ?? 0, 2, ',', '.') ?> Kz</span>
-                <span><strong>Registros:</strong> <?= $totais['total_registros'] ?? 0 ?></span>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-list"></i> Lista de Pagamentos</h3>
+                <div class="totais">
+                    <span><strong>Total Pago:</strong> <?= number_format($totais['total_pago'] ?? 0, 2, ',', '.') ?> Kz</span>
+                    <span><strong>Total Multas:</strong> <?= number_format($totais['total_multa'] ?? 0, 2, ',', '.') ?> Kz</span>
+                    <span><strong>Registros:</strong> <?= $totais['total_registros'] ?? 0 ?></span>
+                </div>
             </div>
-        </div>
-        <div class="card-body">
-            <?php if (empty($pagamentos)): ?>
-                <div class="alert alert-info">Nenhum pagamento encontrado com os filtros aplicados.</div>
-            <?php else: ?>
-                <div class="table-responsive">
-                    <table class="data-table">
+            <div class="card-body">
+                <?php if (empty($pagamentos)): ?>
+                    <div class="no-results">
+                        <p>Nenhum pagamento encontrado com os filtros aplicados.</p>
+                    </div>
+                <?php else: ?>
+                    <table>
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -237,8 +435,7 @@ $totais = $stmt->fetch(PDO::FETCH_ASSOC);
                                     </td>
                                     <td>
                                         <?php if ($pag['data_pagamento']): ?>
-                                            <?= date('d/m/Y', strtotime($pag['data_pagamento'])) ?><br>
-                                            <?= $pag['metodo_pagamento'] ?>
+                                            <?= date('d/m/Y', strtotime($pag['data_pagamento'])) ?>
                                         <?php else: ?>
                                             -
                                         <?php endif; ?>
@@ -266,21 +463,20 @@ $totais = $stmt->fetch(PDO::FETCH_ASSOC);
                             <?php endforeach; ?>
                         </tbody>
                     </table>
-                </div>
 
-                <?php if ($total_paginas > 1): ?>
-                    <div class="pagination">
-                        <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
-                            <a href="?pagina=<?= $i ?>&ano=<?= $ano ?><?= $mes ? '&mes=' . $mes : '' ?><?= $empresa_id ? '&empresa_id=' . $empresa_id : '' ?><?= $contrato_id ? '&contrato_id=' . $contrato_id : '' ?>&status=<?= $status ?>" 
-                               class="<?= $i == $pagina ? 'active' : '' ?>"><?= $i ?></a>
-                        <?php endfor; ?>
-                    </div>
+                    <?php if ($total_paginas > 1): ?>
+                        <div class="pagination">
+                            <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
+                                <a href="?pagina=<?= $i ?>&ano=<?= $ano ?><?= $mes ? '&mes=' . $mes : '' ?><?= $empresa_id ? '&empresa_id=' . $empresa_id : '' ?><?= $contrato_id ? '&contrato_id=' . $contrato_id : '' ?>&status=<?= $status ?>" 
+                                   class="<?= $i == $pagina ? 'active' : '' ?>"><?= $i ?></a>
+                            <?php endfor; ?>
+                        </div>
+                    <?php endif; ?>
                 <?php endif; ?>
-            <?php endif; ?>
+            </div>
         </div>
     </div>
 
-    <script src="/Context/JS/script.js"></script>
     <script>
         // Atualizar lista de contratos quando selecionar empresa
         document.getElementById('empresa_id').addEventListener('change', function() {
@@ -305,25 +501,15 @@ $totais = $stmt->fetch(PDO::FETCH_ASSOC);
                 contratoSelect.disabled = true;
             }
         });
+
+        // Confirmar antes de ações importantes
+        document.querySelectorAll('.btn-danger, .btn-success').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if (!confirm('Tem certeza que deseja realizar esta ação?')) {
+                    e.preventDefault();
+                }
+            });
+        });
     </script>
 </body>
 </html>
-<?php
-function nomeMes($mes) {
-    $meses = [
-        1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março', 4 => 'Abril',
-        5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
-        9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro'
-    ];
-    return $meses[$mes] ?? '';
-}
-
-function getStatusBadgeClass($status) {
-    switch ($status) {
-        case 'Pago': return 'success';
-        case 'Pendente': return 'warning';
-        case 'Atrasado': return 'danger';
-        case 'Cancelado': return 'secondary';
-        default: return 'info';
-    }
-}

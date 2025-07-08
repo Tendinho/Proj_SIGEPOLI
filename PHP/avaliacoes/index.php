@@ -6,200 +6,267 @@ verificarAcesso(5); // Nível de acesso para professores
 $database = new Database();
 $db = $database->getConnection();
 
-$pagina = isset($_GET['pagina']) ? $_GET['pagina'] : 1;
-$registros_por_pagina = 10;
-$offset = ($pagina - 1) * $registros_por_pagina;
+// Filtros
+$turma_id = isset($_GET['turma_id']) ? (int)$_GET['turma_id'] : null;
+$disciplina_id = isset($_GET['disciplina_id']) ? (int)$_GET['disciplina_id'] : null;
 
-$where = "WHERE 1=1";
-$usuario_id = $_SESSION['usuario_id'];
+// Buscar turmas e disciplinas
+$turmas = $db->query("SELECT id, nome FROM turmas WHERE ativo = 1 ORDER BY nome")->fetchAll();
+$disciplinas = $db->query("SELECT id, nome FROM disciplinas WHERE ativo = 1 ORDER BY nome")->fetchAll();
 
-// Se não for admin, filtrar apenas avaliações do professor logado
-if ($_SESSION['nivel_acesso'] < 7) {
-    $where .= " AND a.professor_id IN (SELECT p.id FROM professores p JOIN funcionarios f ON p.funcionario_id = f.id WHERE f.usuario_id = $usuario_id)";
-}
-
-if (isset($_GET['disciplina_id']) && !empty($_GET['disciplina_id'])) {
-    $disciplina_id = $_GET['disciplina_id'];
-    $where .= " AND a.disciplina_id = $disciplina_id";
-}
-
-if (isset($_GET['turma_id']) && !empty($_GET['turma_id'])) {
-    $turma_id = $_GET['turma_id'];
-    $where .= " AND a.turma_id = $turma_id";
-}
-
-if (isset($_GET['tipo_avaliacao']) && !empty($_GET['tipo_avaliacao'])) {
-    $tipo_avaliacao = $_GET['tipo_avaliacao'];
-    $where .= " AND a.tipo_avaliacao = '$tipo_avaliacao'";
-}
-
-// Buscar avaliações
-$query = "SELECT a.id, al.nome_completo as aluno, d.nome as disciplina, 
-                 t.nome as turma, a.tipo_avaliacao, a.nota, 
-                 DATE_FORMAT(a.data_avaliacao, '%d/%m/%Y') as data_av,
-                 p.funcionario_id, f.nome_completo as professor
+// Consulta avaliações
+$query = "SELECT a.*, al.nome_completo AS aluno, d.nome AS disciplina, t.nome AS turma
           FROM avaliacoes a
           JOIN alunos al ON a.aluno_id = al.id
           JOIN disciplinas d ON a.disciplina_id = d.id
           JOIN turmas t ON a.turma_id = t.id
-          JOIN professores p ON a.professor_id = p.id
-          JOIN funcionarios f ON p.funcionario_id = f.id
-          $where
-          ORDER BY a.data_avaliacao DESC
-          LIMIT $offset, $registros_por_pagina";
+          WHERE 1=1";
+$params = [];
+
+if ($turma_id) {
+    $query .= " AND a.turma_id = :turma_id";
+    $params[':turma_id'] = $turma_id;
+}
+
+if ($disciplina_id) {
+    $query .= " AND a.disciplina_id = :disciplina_id";
+    $params[':disciplina_id'] = $disciplina_id;
+}
+
+$query .= " ORDER BY a.data_avaliacao DESC";
 $stmt = $db->prepare($query);
+foreach ($params as $key => $value) {
+    $stmt->bindValue($key, $value);
+}
 $stmt->execute();
-
-// Contar total de registros
-$query_count = "SELECT COUNT(*) as total 
-                FROM avaliacoes a
-                $where";
-$stmt_count = $db->prepare($query_count);
-$stmt_count->execute();
-$total_registros = $stmt_count->fetch(PDO::FETCH_ASSOC)['total'];
-$total_paginas = ceil($total_registros / $registros_por_pagina);
-
-// Buscar disciplinas para filtro
-$query_disciplinas = "SELECT d.id, d.nome 
-                      FROM disciplinas d
-                      JOIN aulas au ON d.id = au.disciplina_id
-                      JOIN professores p ON au.professor_id = p.id
-                      JOIN funcionarios f ON p.funcionario_id = f.id
-                      WHERE f.usuario_id = $usuario_id
-                      ORDER BY d.nome";
-$stmt_disciplinas = $db->prepare($query_disciplinas);
-$stmt_disciplinas->execute();
-
-// Buscar turmas para filtro
-$query_turmas = "SELECT DISTINCT t.id, t.nome 
-                 FROM turmas t
-                 JOIN aulas a ON t.id = a.turma_id
-                 JOIN professores p ON a.professor_id = p.id
-                 JOIN funcionarios f ON p.funcionario_id = f.id
-                 WHERE f.usuario_id = $usuario_id
-                 ORDER BY t.nome";
-$stmt_turmas = $db->prepare($query_turmas);
-$stmt_turmas->execute();
+$avaliacoes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avaliações - SIGEPOLI</title>
-    <link rel="stylesheet" href="../../Context/CSS/style.css">
-    <link rel="stylesheet" href="../../Context/CSS/fontawesome/css/all.min.css">
+    <title>Avaliações - <?= SISTEMA_NOME ?></title>
+    <link rel="stylesheet" href="/Context/CSS/styles.css">
+    <link rel="stylesheet" href="/Context/fontawesome/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            display: inline-block;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-primary {
+            background-color: #3498db;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .btn-back {
+            background-color: #7f8c8d;
+        }
+        .btn-back:hover {
+            background-color: #6c757d;
+        }
+        .btn-add {
+            background-color: #28a745;
+        }
+        .btn-add:hover {
+            background-color: #218838;
+        }
+        .filter-form {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            flex: 1;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .badge-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+    </style>
 </head>
 <body>
-    <?php include_once '../../includes/header.php'; ?>
-    
-    <div class="content">
-        <h1><i class="fas fa-clipboard-check"></i> Gestão de Avaliações</h1>
-        
-        <?php if (isset($_SESSION['mensagem'])): ?>
-            <div class="alert alert-<?php echo $_SESSION['tipo_mensagem']; ?>">
-                <?php echo $_SESSION['mensagem']; unset($_SESSION['mensagem']); unset($_SESSION['tipo_mensagem']); ?>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-clipboard-check"></i> Avaliações</h1>
+            <div>
+                <a href="/PHP/avaliacoes/criar.php" class="btn btn-add"><i class="fas fa-plus"></i> Adicionar Avaliação</a>
+                <a href="/PHP/index.php" class="btn btn-back"><i class="fas fa-arrow-left"></i> Voltar ao Menu</a>
             </div>
-        <?php endif; ?>
-        
-        <div class="toolbar">
-            <a href="criar.php" class="btn btn-primary"><i class="fas fa-plus"></i> Nova Avaliação</a>
-            
-            <form method="get" class="search-form">
+        </div>
+
+        <div class="filter-form">
+            <form method="get">
                 <div class="form-row">
                     <div class="form-group">
-                        <select name="disciplina_id">
-                            <option value="">Todas disciplinas</option>
-                            <?php while ($disciplina = $stmt_disciplinas->fetch(PDO::FETCH_ASSOC)): ?>
-                                <option value="<?php echo $disciplina['id']; ?>" <?php echo isset($_GET['disciplina_id']) && $_GET['disciplina_id'] == $disciplina['id'] ? 'selected' : ''; ?>>
-                                    <?php echo $disciplina['nome']; ?>
+                        <label for="turma_id">Turma:</label>
+                        <select name="turma_id" id="turma_id">
+                            <option value="">Todas as Turmas</option>
+                            <?php foreach ($turmas as $turma): ?>
+                                <option value="<?= $turma['id'] ?>" <?= $turma_id == $turma['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($turma['nome']) ?>
                                 </option>
-                            <?php endwhile; ?>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     
                     <div class="form-group">
-                        <select name="turma_id">
-                            <option value="">Todas turmas</option>
-                            <?php 
-                            $stmt_turmas->execute();
-                            while ($turma = $stmt_turmas->fetch(PDO::FETCH_ASSOC)): ?>
-                                <option value="<?php echo $turma['id']; ?>" <?php echo isset($_GET['turma_id']) && $_GET['turma_id'] == $turma['id'] ? 'selected' : ''; ?>>
-                                    <?php echo $turma['nome']; ?>
+                        <label for="disciplina_id">Disciplina:</label>
+                        <select name="disciplina_id" id="disciplina_id">
+                            <option value="">Todas as Disciplinas</option>
+                            <?php foreach ($disciplinas as $disciplina): ?>
+                                <option value="<?= $disciplina['id'] ?>" <?= $disciplina_id == $disciplina['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($disciplina['nome']) ?>
                                 </option>
-                            <?php endwhile; ?>
+                            <?php endforeach; ?>
                         </select>
                     </div>
-                    
-                    <div class="form-group">
-                        <select name="tipo_avaliacao">
-                            <option value="">Todos tipos</option>
-                            <option value="Teste" <?php echo isset($_GET['tipo_avaliacao']) && $_GET['tipo_avaliacao'] == 'Teste' ? 'selected' : ''; ?>>Teste</option>
-                            <option value="Exame" <?php echo isset($_GET['tipo_avaliacao']) && $_GET['tipo_avaliacao'] == 'Exame' ? 'selected' : ''; ?>>Exame</option>
-                            <option value="Trabalho" <?php echo isset($_GET['tipo_avaliacao']) && $_GET['tipo_avaliacao'] == 'Trabalho' ? 'selected' : ''; ?>>Trabalho</option>
-                            <option value="Projeto" <?php echo isset($_GET['tipo_avaliacao']) && $_GET['tipo_avaliacao'] == 'Projeto' ? 'selected' : ''; ?>>Projeto</option>
-                        </select>
-                    </div>
-                    
-                    <button type="submit" class="btn"><i class="fas fa-filter"></i> Filtrar</button>
                 </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filtrar</button>
+                <a href="index.php" class="btn btn-secondary"><i class="fas fa-broom"></i> Limpar Filtros</a>
             </form>
         </div>
-        
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Aluno</th>
-                    <th>Disciplina</th>
-                    <th>Turma</th>
-                    <th>Tipo</th>
-                    <th>Nota</th>
-                    <th>Data</th>
-                    <th>Professor</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($row = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
+
+        <?php if (empty($avaliacoes)): ?>
+            <div class="no-results">
+                <p>Nenhuma avaliação encontrada com os critérios selecionados.</p>
+            </div>
+        <?php else: ?>
+            <table>
+                <thead>
                     <tr>
-                        <td><?php echo $row['aluno']; ?></td>
-                        <td><?php echo $row['disciplina']; ?></td>
-                        <td><?php echo $row['turma']; ?></td>
-                        <td><?php echo $row['tipo_avaliacao']; ?></td>
-                        <td class="<?php echo $row['nota'] >= 10 ? 'text-success' : 'text-danger'; ?>">
-                            <b><?php echo number_format($row['nota'], 1, ',', '.'); ?></b>
-                        </td>
-                        <td><?php echo $row['data_av']; ?></td>
-                        <td><?php echo $row['professor']; ?></td>
-                        <td class="actions">
-                            <a href="editar.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-edit"><i class="fas fa-edit"></i></a>
-                            <a href="excluir.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-delete" onclick="return confirm('Tem certeza que deseja excluir esta avaliação?')"><i class="fas fa-trash"></i></a>
-                        </td>
+                        <th>Aluno</th>
+                        <th>Disciplina</th>
+                        <th>Turma</th>
+                        <th>Tipo</th>
+                        <th>Nota</th>
+                        <th>Data</th>
+                        <th>Ações</th>
                     </tr>
-                <?php endwhile; ?>
-                
-                <?php if ($stmt->rowCount() == 0): ?>
-                    <tr><td colspan="8">Nenhuma avaliação encontrada</td></tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
-        
-        <div class="pagination">
-            <?php if ($pagina > 1): ?>
-                <a href="?pagina=<?php echo $pagina - 1; ?><?php echo isset($_GET['disciplina_id']) ? '&disciplina_id=' . $_GET['disciplina_id'] : ''; ?><?php echo isset($_GET['turma_id']) ? '&turma_id=' . $_GET['turma_id'] : ''; ?><?php echo isset($_GET['tipo_avaliacao']) ? '&tipo_avaliacao=' . $_GET['tipo_avaliacao'] : ''; ?>" class="btn">&laquo; Anterior</a>
-            <?php endif; ?>
-            
-            <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
-                <a href="?pagina=<?php echo $i; ?><?php echo isset($_GET['disciplina_id']) ? '&disciplina_id=' . $_GET['disciplina_id'] : ''; ?><?php echo isset($_GET['turma_id']) ? '&turma_id=' . $_GET['turma_id'] : ''; ?><?php echo isset($_GET['tipo_avaliacao']) ? '&tipo_avaliacao=' . $_GET['tipo_avaliacao'] : ''; ?>" class="btn <?php echo $i == $pagina ? 'active' : ''; ?>"><?php echo $i; ?></a>
-            <?php endfor; ?>
-            
-            <?php if ($pagina < $total_paginas): ?>
-                <a href="?pagina=<?php echo $pagina + 1; ?><?php echo isset($_GET['disciplina_id']) ? '&disciplina_id=' . $_GET['disciplina_id'] : ''; ?><?php echo isset($_GET['turma_id']) ? '&turma_id=' . $_GET['turma_id'] : ''; ?><?php echo isset($_GET['tipo_avaliacao']) ? '&tipo_avaliacao=' . $_GET['tipo_avaliacao'] : ''; ?>" class="btn">Próxima &raquo;</a>
-            <?php endif; ?>
-        </div>
+                </thead>
+                <tbody>
+                    <?php foreach ($avaliacoes as $avaliacao): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($avaliacao['aluno']) ?></td>
+                            <td><?= htmlspecialchars($avaliacao['disciplina']) ?></td>
+                            <td><?= htmlspecialchars($avaliacao['turma']) ?></td>
+                            <td><?= htmlspecialchars($avaliacao['tipo_avaliacao']) ?></td>
+                            <td>
+                                <span class="badge <?= $avaliacao['nota'] >= 10 ? 'badge-success' : 'badge-danger' ?>">
+                                    <?= number_format($avaliacao['nota'], 2) ?>
+                                </span>
+                            </td>
+                            <td><?= date('d/m/Y', strtotime($avaliacao['data_avaliacao'])) ?></td>
+                            <td class="action-buttons">
+                                <a href="editar.php?id=<?= $avaliacao['id'] ?>" class="btn btn-primary" title="Editar"><i class="fas fa-edit"></i></a>
+                                <a href="excluir.php?id=<?= $avaliacao['id'] ?>" class="btn btn-secondary" title="Excluir" onclick="return confirm('Tem certeza que deseja excluir esta avaliação?');"><i class="fas fa-trash-alt"></i></a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
     </div>
-    
-    <script src="../../Context/JS/script.js"></script>
+
+    <script>
+        // Adiciona confirmação antes de excluir
+        document.querySelectorAll('.btn-excluir').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if (!confirm('Tem certeza que deseja excluir esta avaliação?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
 </body>
 </html>

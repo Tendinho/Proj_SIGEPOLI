@@ -69,6 +69,7 @@ $total_paginas = ceil($total / $por_pagina);
                     <span>Configurações</span>
                     <span>Auditoria</span>
                 </div>
+                <a href="/PHP/index.php" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Voltar</a>
                 <div class="user-info">
                     <span><?= htmlspecialchars($_SESSION['nome_completo'] ?? 'Usuário') ?></span>
                     <img src="/Proj_SIGEPOLI/Context/IMG/user-default.png" alt="User">

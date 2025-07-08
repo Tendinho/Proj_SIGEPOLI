@@ -58,8 +58,8 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <title>Usuários - <?= SISTEMA_NOME ?></title>
-    <link rel="stylesheet" href="/Proj_SIGEPOLI/Context/CSS/styles.css">
-    <link rel="stylesheet" href="/Proj_SIGEPOLI/Context/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/Context/CSS/styles.css">
+    <link rel="stylesheet" href="/Context/fontawesome/css/all.min.css">
     <style>
         .sidebar {
             width: 250px;
@@ -95,9 +95,12 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <span>Configurações</span>
                     <span>Usuários</span>
                 </div>
+                
+                <a href="/PHP/index.php" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Voltar</a>
+
                 <div class="user-info">
                     <span><?= htmlspecialchars($_SESSION['nome_completo'] ?? 'Usuário') ?></span>
-                    <img src="/Proj_SIGEPOLI/Context/IMG/user-default.png" alt="User">
+                    <img src="/Context/IMG/user-default.png" alt="User">
                 </div>
             </header>
             

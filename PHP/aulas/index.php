@@ -13,7 +13,6 @@ $por_pagina = 15;
 $offset = ($pagina - 1) * $por_pagina;
 
 $filtros = [
-    'busca' => $_GET['busca'] ?? '',
     'turma_id' => isset($_GET['turma_id']) ? (int)$_GET['turma_id'] : null,
     'disciplina_id' => isset($_GET['disciplina_id']) ? (int)$_GET['disciplina_id'] : null
 ];
@@ -21,11 +20,6 @@ $filtros = [
 // Construir WHERE
 $where = "WHERE a.ativo = 1";
 $params = [];
-
-if (!empty($filtros['busca'])) {
-    $where .= " AND (d.nome LIKE :busca OR t.nome LIKE :busca)";
-    $params[':busca'] = "%{$filtros['busca']}%";
-}
 
 if ($filtros['turma_id']) {
     $where .= " AND a.turma_id = :turma_id";
@@ -79,12 +73,74 @@ $aulas = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <title>Gestão de Aulas - SIGEPOLI</title>
     <link rel="stylesheet" href="/Context/CSS/styles.css">
     <link rel="stylesheet" href="/Context/fontawesome/css/all.min.css">
+    <style>
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table th, .data-table td {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            text-align: left;
+        }
+        .data-table th {
+            background-color: #343a40;
+            color: white;
+        }
+        .data-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .actions {
+            white-space: nowrap;
+        }
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            gap: 5px;
+        }
+        .pagination a {
+            padding: 5px 10px;
+            border: 1px solid #dee2e6;
+            text-decoration: none;
+        }
+        .pagination a.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+    </style>
 </head>
 <body>
     <div class="content-header">
         <h1><i class="fas fa-chalkboard-teacher"></i> Gestão de Aulas</h1>
         <a href="criar.php" class="btn btn-primary"><i class="fas fa-plus"></i> Nova Aula</a>
     </div>
+
+    <a href="/PHP/index.php" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Voltar</a>
 
     <div class="card">
         <div class="card-header">
@@ -93,14 +149,9 @@ $aulas = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="card-body">
             <form method="get" class="filter-form">
                 <div class="form-group">
-                    <label for="busca">Pesquisar:</label>
-                    <input type="text" name="busca" placeholder="Disciplina ou Turma..." value="<?= htmlspecialchars($filtros['busca']) ?>">
-                </div>
-                
-                <div class="form-group">
                     <label for="turma_id">Turma:</label>
-                    <select name="turma_id">
-                        <option value="">Todas</option>
+                    <select name="turma_id" id="turma_id">
+                        <option value="">Todas as Turmas</option>
                         <?php foreach ($turmas as $turma): ?>
                             <option value="<?= $turma['id'] ?>" <?= $filtros['turma_id'] == $turma['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($turma['nome']) ?>
@@ -111,8 +162,8 @@ $aulas = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 
                 <div class="form-group">
                     <label for="disciplina_id">Disciplina:</label>
-                    <select name="disciplina_id">
-                        <option value="">Todas</option>
+                    <select name="disciplina_id" id="disciplina_id">
+                        <option value="">Todas as Disciplinas</option>
                         <?php foreach ($disciplinas as $disciplina): ?>
                             <option value="<?= $disciplina['id'] ?>" <?= $filtros['disciplina_id'] == $disciplina['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($disciplina['nome']) ?>
@@ -121,8 +172,10 @@ $aulas = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </select>
                 </div>
                 
-                <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Aplicar Filtros</button>
-                <a href="index.php" class="btn btn-secondary"><i class="fas fa-times"></i> Limpar</a>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filtrar</button>
+                    <a href="index.php" class="btn btn-secondary"><i class="fas fa-times"></i> Limpar</a>
+                </div>
             </form>
         </div>
     </div>
@@ -175,7 +228,7 @@ $aulas = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php if ($total_paginas > 1): ?>
                     <div class="pagination">
                         <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
-                            <a href="?pagina=<?= $i ?><?= !empty($filtros['busca']) ? '&busca=' . urlencode($filtros['busca']) : '' ?><?= $filtros['turma_id'] ? '&turma_id=' . $filtros['turma_id'] : '' ?><?= $filtros['disciplina_id'] ? '&disciplina_id=' . $filtros['disciplina_id'] : '' ?>"
+                            <a href="?pagina=<?= $i ?><?= $filtros['turma_id'] ? '&turma_id=' . $filtros['turma_id'] : '' ?><?= $filtros['disciplina_id'] ? '&disciplina_id=' . $filtros['disciplina_id'] : '' ?>"
                                class="<?= $i == $pagina ? 'active' : '' ?>"><?= $i ?></a>
                         <?php endfor; ?>
                     </div>

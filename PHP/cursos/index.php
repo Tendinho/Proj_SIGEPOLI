@@ -48,7 +48,7 @@ $stmt->execute();
     <title>Cursos - SIGEPOLI</title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/Context/CSS/styles.css">
     <link rel="stylesheet" href="/Context/CSS/cursos.css">
-    <link rel="stylesheet" href="<?= BASE_URL ?>/Context/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/Context/fontawesome/css/all.min.css">
 </head>
 <body>
     <div class="cursos-container">

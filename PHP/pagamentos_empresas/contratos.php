@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../db.php';
 verificarLogin();
 verificarAcesso(5); // Nível de acesso para gestão operacional
 
@@ -94,7 +93,10 @@ $contratos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
     <div class="content-header">
         <h1><i class="fas fa-file-contract"></i> Gestão de Contratos</h1>
-        <a href="criar.php" class="btn btn-primary"><i class="fas fa-plus"></i> Novo Contrato</a>
+        <div class="header-actions">
+            <a href="/PHP/index.php" class="btn btn-secondary"><i class="fas fa-home"></i> Menu Principal</a>
+            <a href="criar.php" class="btn btn-primary"><i class="fas fa-plus"></i> Novo Contrato</a>
+        </div>
     </div>
 
     <div class="card">
@@ -238,5 +240,6 @@ $contratos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php endif; ?>
         </div>
     </div>
+    <script src="/Context/JS/script.js"></script>
 </body>
 </html>
