@@ -206,8 +206,8 @@ $empresas = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="header">
             <h1><i class="fas fa-building"></i> Empresas</h1>
             <div>
-                <a href="criar.php" class="btn btn-add"><i class="fas fa-plus"></i> Nova Empresa</a>
-                <a href="../index.php" class="btn btn-back"><i class="fas fa-arrow-left"></i> Voltar ao Menu</a>
+                <a href="/PHP/empresas/criar.php" class="btn btn-add"><i class="fas fa-plus"></i> Nova Empresa</a>
+                <a href="/PHP/index.php" class="btn btn-back"><i class="fas fa-arrow-left"></i> Voltar ao Menu</a>
             </div>
         </div>
 

@@ -114,7 +114,8 @@ if ($filtros['contrato_id']) {
         </h1>
         <div class="header-actions">
             <a href="/PHP/index.php" class="btn btn-secondary"><i class="fas fa-home"></i> Menu Principal</a>
-            <a href="registrar.php<?= $contrato_id ? '?contrato_id='.$contrato_id : '' ?>" class="btn btn-primary"><i class="fas fa-plus"></i> Novo Pagamento</a>
+            <a href="registrar.php<?= $contrato_id ? '?contrato_id='.$contrato_id : '' ?>" class="btn btn-primary"><i class="fas fa-plus"></i> Registrar Pagamentos</a>
+                        <a href="/PHP/pagamentos_empresas/criar.php" class="btn btn-primary"><i class="fas fa-plus"></i> Novo Pagamento</a>
         </div>
     </div>
 

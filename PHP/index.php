@@ -45,7 +45,7 @@ verificarLogin();
                     
                     <!-- Menu Operacional -->
                     <li class="menu-section"><i class="fas fa-cogs"></i> Operacional</li>
-                    <li><a href="/PHP/pagamentos_empresas/index.php"><i class="fas fa-industry"></i> Empresas</a></li>
+                    <li><a href="/PHP/empresas/index.php"><i class="fas fa-industry"></i> Empresas</a></li>
                     <li><a href="/PHP/pagamentos_empresas/contratos.php"><i class="fas fa-file-contract"></i> Contratos</a></li>
                     <li><a href="/PHP/pagamentos_empresas/pagamentos.php"><i class="fas fa-money-bill-wave"></i> Pagamentos</a></li>
                     

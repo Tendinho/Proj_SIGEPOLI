@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($stmt->execute()) {
                 $aluno_id = $db->lastInsertId();
-                registrarAuditoria('Criação', 'alunos', $aluno_id, null, json_encode($_POST));
+                registrarAuditoria('Criação', 'alunos', $aluno_id, json_encode($_POST));
                 
                 $_SESSION['mensagem'] = "Aluno cadastrado com sucesso!";
                 $_SESSION['tipo_mensagem'] = "sucesso";
@@ -97,17 +97,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Recupera dados do formulário se houver erro
 $dadosFormulario = $_SESSION['dados_formulario'] ?? [];
 unset($_SESSION['dados_formulario']);
-
-// Função para verificar BI existente
-function verificarBIExistente($bi) {
-    global $db;
-    $query = "SELECT COUNT(*) as total FROM alunos WHERE bi = :bi AND ativo = 1";
-    $stmt = $db->prepare($query);
-    $stmt->bindParam(":bi", $bi);
-    $stmt->execute();
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $result['total'] > 0;
-}
 ?>
 
 <!DOCTYPE html>

@@ -117,7 +117,7 @@ if (isset($_GET['empresa_id']) && $_GET['empresa_id'] > 0) {
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-money-bill-wave"></i> Novo Pagamento</h1>
-            <a href="index.php" class="btn btn-secondary">Voltar</a>
+            <a href="/PHP/pagamentos_empresas/pagamentos.php" class="btn btn-secondary">Voltar</a>
         </div>
 
         <?php if ($erro): ?>

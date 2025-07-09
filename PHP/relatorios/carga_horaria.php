@@ -1,10 +1,27 @@
 <?php
-require_once __DIR__ . '/../config.php';
-verificarLogin();
-verificarAcesso(7); // Nível de acesso maior para relatórios
+// Inicialização da sessão
+if (session_status() === PHP_SESSION_NONE) {
+    session_start([
+        'cookie_lifetime' => 86400,
+        'cookie_secure' => isset($_SERVER['HTTPS']),
+        'cookie_httponly' => true,
+        'cookie_samesite' => 'Strict'
+    ]);
+}
 
-$database = new Database();
-$db = $database->getConnection();
+// Verificação de login e acesso (simplificada)
+if (!isset($_SESSION['usuario_id']) || ($_SESSION['nivel_acesso'] ?? 0) < 7) {
+    header("Location: /PHP/login.php");
+    exit();
+}
+
+// Conexão com o banco de dados
+try {
+    $db = new PDO('mysql:host=localhost;dbname=sigepoli;charset=utf8mb4', 'admin', 'SenhaSegura123!');
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Erro na conexão com o banco de dados: " . $e->getMessage());
+}
 
 // Filtros
 $filtros = [
@@ -45,66 +62,82 @@ if ($filtros['periodo']) {
 }
 
 // Buscar cursos para filtro
-$cursos = $db->query("SELECT id, nome FROM cursos WHERE ativo = 1 ORDER BY nome")->fetchAll();
+try {
+    $cursos = $db->query("SELECT id, nome FROM cursos WHERE ativo = 1 ORDER BY nome")->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $cursos = [];
+    $erro = "Erro ao carregar cursos: " . $e->getMessage();
+}
 
 // Buscar professores para filtro
-$professores = $db->query("SELECT p.id, f.nome_completo 
-                          FROM professores p 
-                          JOIN funcionarios f ON p.funcionario_id = f.id 
-                          WHERE p.ativo = 1 
-                          ORDER BY f.nome_completo")->fetchAll();
+try {
+    $professores = $db->query("SELECT p.id, f.nome_completo 
+                             FROM professores p 
+                             JOIN funcionarios f ON p.funcionario_id = f.id 
+                             WHERE p.ativo = 1 
+                             ORDER BY f.nome_completo")->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $professores = [];
+    $erro = "Erro ao carregar professores: " . $e->getMessage();
+}
 
 // Buscar dados para o relatório
-$sql = "SELECT 
-            c.nome AS curso,
-            d.nome AS disciplina,
-            d.semestre,
-            d.carga_horaria,
-            p.id AS professor_id,
-            f.nome_completo AS professor,
-            t.nome AS turma,
-            t.periodo,
-            COUNT(a.id) AS total_aulas,
-            SUM(TIME_TO_SEC(TIMEDIFF(a.hora_fim, a.hora_inicio))/3600 AS horas_lecionadas
-        FROM aulas a
-        JOIN disciplinas d ON a.disciplina_id = d.id
-        JOIN cursos c ON d.curso_id = c.id
-        JOIN professores p ON a.professor_id = p.id
-        JOIN funcionarios f ON p.funcionario_id = f.id
-        JOIN turmas t ON a.turma_id = t.id
-        $where
-        GROUP BY d.id, p.id, t.id
-        ORDER BY c.nome, d.semestre, d.nome, f.nome_completo";
-$stmt = $db->prepare($sql);
-foreach ($params as $key => $value) {
-    $stmt->bindValue($key, $value);
-}
-$stmt->execute();
-$dados = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Calcular totais
+$dados = [];
 $total_geral_horas = 0;
 $totais_por_professor = [];
 $totais_por_curso = [];
 
-foreach ($dados as $linha) {
-    $horas = (float)$linha['horas_lecionadas'];
-    $total_geral_horas += $horas;
+try {
+    $sql = "SELECT 
+                c.nome AS curso,
+                d.nome AS disciplina,
+                d.semestre,
+                d.carga_horaria,
+                p.id AS professor_id,
+                f.nome_completo AS professor,
+                t.nome AS turma,
+                t.periodo,
+                COUNT(a.id) AS total_aulas,
+                SUM(TIME_TO_SEC(TIMEDIFF(a.hora_fim, a.hora_inicio))/3600) AS horas_lecionadas
+            FROM aulas a
+            JOIN disciplinas d ON a.disciplina_id = d.id
+            JOIN cursos c ON d.curso_id = c.id
+            JOIN professores p ON a.professor_id = p.id
+            JOIN funcionarios f ON p.funcionario_id = f.id
+            JOIN turmas t ON a.turma_id = t.id
+            $where
+            GROUP BY d.id, p.id, t.id
+            ORDER BY c.nome, d.semestre, d.nome, f.nome_completo";
     
-    // Totais por professor
-    if (!isset($totais_por_professor[$linha['professor_id']])) {
-        $totais_por_professor[$linha['professor_id']] = [
-            'nome' => $linha['professor'],
-            'total' => 0
-        ];
+    $stmt = $db->prepare($sql);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue($key, $value);
     }
-    $totais_por_professor[$linha['professor_id']]['total'] += $horas;
-    
-    // Totais por curso
-    if (!isset($totais_por_curso[$linha['curso']])) {
-        $totais_por_curso[$linha['curso']] = 0;
+    $stmt->execute();
+    $dados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Calcular totais
+    foreach ($dados as $linha) {
+        $horas = (float)$linha['horas_lecionadas'];
+        $total_geral_horas += $horas;
+        
+        // Totais por professor
+        if (!isset($totais_por_professor[$linha['professor_id']])) {
+            $totais_por_professor[$linha['professor_id']] = [
+                'nome' => $linha['professor'],
+                'total' => 0
+            ];
+        }
+        $totais_por_professor[$linha['professor_id']]['total'] += $horas;
+        
+        // Totais por curso
+        if (!isset($totais_por_curso[$linha['curso']])) {
+            $totais_por_curso[$linha['curso']] = 0;
+        }
+        $totais_por_curso[$linha['curso']] += $horas;
     }
-    $totais_por_curso[$linha['curso']] += $horas;
+} catch (PDOException $e) {
+    $erro = "Erro ao gerar relatório: " . $e->getMessage();
 }
 ?>
 <!DOCTYPE html>
@@ -112,36 +145,211 @@ foreach ($dados as $linha) {
 <head>
     <meta charset="UTF-8">
     <title>Relatório de Carga Horária - SIGEPOLI</title>
-    <link rel="stylesheet" href="/Context/CSS/styles.css">
-    <link rel="stylesheet" href="/Context/fontawesome/css/all.min.css">
     <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .btn {
+            padding: 8px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+            border: none;
+        }
+        
+        .btn-secondary {
+            background-color: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background-color: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .card-header h3 {
+            margin: 0;
+            color: #495057;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .filter-form {
+            margin-bottom: 20px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            flex: 1;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
         .report-summary {
             margin-bottom: 20px;
             padding: 15px;
             background-color: #f8f9fa;
             border-radius: 5px;
         }
+        
         .report-table {
             width: 100%;
+            border-collapse: collapse;
             margin-bottom: 20px;
         }
+        
         .report-table th {
             background-color: #343a40;
             color: white;
+            text-align: left;
         }
+        
         .report-table td, .report-table th {
-            padding: 8px;
+            padding: 10px;
             border: 1px solid #dee2e6;
         }
+        
         .report-table tr:nth-child(even) {
             background-color: #f2f2f2;
         }
+        
         .total-row {
             font-weight: bold;
             background-color: #e9ecef !important;
         }
-        .print-button {
-            margin-bottom: 20px;
+        
+        .bg-dark {
+            background-color: #343a40 !important;
+            color: white;
+        }
+        
+        .text-white {
+            color: white !important;
+        }
+        
+        .progress {
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+        }
+        
+        .bg-success {
+            background-color: #28a745;
+        }
+        
+        .bg-info {
+            background-color: #17a2b8;
+        }
+        
+        .bg-warning {
+            background-color: #ffc107;
+        }
+        
+        .bg-danger {
+            background-color: #dc3545;
+        }
+        
+        @media print {
+            .no-print {
+                display: none;
+            }
+            
+            body {
+                padding: 0;
+                font-size: 12px;
+            }
+            
+            .report-table td, .report-table th {
+                padding: 5px;
+            }
         }
     </style>
 </head>
@@ -149,15 +357,19 @@ foreach ($dados as $linha) {
     <div class="content">
         <div class="content-header">
             <h1><i class="fas fa-clock"></i> Relatório de Carga Horária</h1>
-            <div class="header-actions">
-                <a href="/PHP/index.php" class="btn btn-secondary"><i class="fas fa-home"></i> Menu Principal</a>
-                <a href="javascript:window.print()" class="btn btn-primary print-button"><i class="fas fa-print"></i> Imprimir</a>
+            <div class="header-actions no-print">
+                <a href="/PHP/index.php" class="btn btn-secondary">Menu Principal</a>
+                <button onclick="window.print()" class="btn btn-primary">Imprimir</button>
             </div>
         </div>
 
-        <div class="card">
+        <?php if (isset($erro)): ?>
+            <div class="alert alert-danger"><?= htmlspecialchars($erro) ?></div>
+        <?php endif; ?>
+
+        <div class="card no-print">
             <div class="card-header">
-                <h3><i class="fas fa-filter"></i> Filtros</h3>
+                <h3>Filtros</h3>
             </div>
             <div class="card-body">
                 <form method="get" class="filter-form">
@@ -213,8 +425,8 @@ foreach ($dados as $linha) {
                         </div>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Aplicar Filtros</button>
-                    <a href="carga_horaria.php" class="btn btn-secondary"><i class="fas fa-times"></i> Limpar</a>
+                    <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+                    <a href="carga_horaria.php" class="btn btn-secondary">Limpar</a>
                 </form>
             </div>
         </div>
@@ -228,7 +440,7 @@ foreach ($dados as $linha) {
 
         <div class="card">
             <div class="card-header">
-                <h3><i class="fas fa-table"></i> Detalhes da Carga Horária</h3>
+                <h3>Detalhes da Carga Horária</h3>
             </div>
             <div class="card-body">
                 <?php if (empty($dados)): ?>
@@ -294,10 +506,9 @@ foreach ($dados as $linha) {
                                     <td><?= $linha['total_aulas'] ?></td>
                                     <td><?= number_format($linha['horas_lecionadas'], 2) ?> horas</td>
                                     <td>
-                                        <div class="progress" style="height: 20px;">
+                                        <div class="progress">
                                             <div class="progress-bar <?= $percentual >= 100 ? 'bg-success' : ($percentual >= 75 ? 'bg-info' : ($percentual >= 50 ? 'bg-warning' : 'bg-danger')) ?>" 
-                                                 role="progressbar" style="width: <?= min($percentual, 100) ?>%;" 
-                                                 aria-valuenow="<?= $percentual ?>" aria-valuemin="0" aria-valuemax="100">
+                                                 style="width: <?= min($percentual, 100) ?>%;">
                                                 <?= number_format($percentual, 1) ?>%
                                             </div>
                                         </div>
@@ -338,6 +549,5 @@ foreach ($dados as $linha) {
             </div>
         </div>
     </div>
-    <script src="/Context/JS/script.js"></script>
 </body>
 </html>

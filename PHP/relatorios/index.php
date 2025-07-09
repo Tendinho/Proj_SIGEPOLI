@@ -40,7 +40,7 @@ $db = $database->getConnection();
                 </div>
                 <div class="card-body">
                     <p>Relatório de contratos e custos com empresas terceirizadas</p>
-                    <a href="custos.php" class="btn btn-primary">Gerar Relatório</a>
+                    <a href="custo.php" class="btn btn-primary">Gerar Relatório</a>
                 </div>
             </div>
             
