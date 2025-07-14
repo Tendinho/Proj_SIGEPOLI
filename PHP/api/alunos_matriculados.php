@@ -1,4 +1,5 @@
 <?php
+// api/alunos_matriculados.php
 require_once __DIR__ . '/../config.php';
 
 $database = new Database();
@@ -15,18 +16,17 @@ if (!isset($_GET['turma_id']) || !is_numeric($_GET['turma_id'])) {
 $turma_id = $_GET['turma_id'];
 
 try {
-    $query = "SELECT a.id, a.nome_completo 
-              FROM alunos a
-              JOIN matriculas m ON a.id = m.aluno_id
-              WHERE m.turma_id = :turma_id
-              AND a.ativo = 1
-              AND m.status = 'Ativa'
-              ORDER BY a.nome_completo";
-              
-    $stmt = $db->prepare($query);
-    $stmt->bindParam(':turma_id', $turma_id, PDO::PARAM_INT);
+    $stmt = $db->prepare("
+        SELECT a.id, a.nome_completo
+        FROM alunos a
+        JOIN matriculas m ON a.id = m.aluno_id
+        WHERE m.turma_id = :turma_id
+        AND a.ativo = 1
+        AND m.status = 'Ativa'
+        ORDER BY a.nome_completo
+    ");
+    $stmt->bindParam(":turma_id", $turma_id);
     $stmt->execute();
-    
     $alunos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     echo json_encode($alunos);

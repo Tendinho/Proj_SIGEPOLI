@@ -1,4 +1,5 @@
 <?php
+// avaliacoes/criar.php
 require_once __DIR__ . '/../config.php';
 verificarLogin();
 verificarAcesso(5); // Nível de acesso para professores

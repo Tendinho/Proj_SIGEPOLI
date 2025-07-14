@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../db.php';
+
 verificarLogin();
 verificarAcesso(5);
 
@@ -11,13 +13,23 @@ $query_alunos = "SELECT id, nome_completo FROM alunos WHERE ativo = 1 ORDER BY n
 $stmt_alunos = $db->prepare($query_alunos);
 $stmt_alunos->execute();
 
-// Buscar turmas ativas
+// Buscar cursos ativos para filtro
+$query_cursos = "SELECT id, nome FROM cursos WHERE ativo = 1 ORDER BY nome";
+$stmt_cursos = $db->prepare($query_cursos);
+$stmt_cursos->execute();
+
+// Buscar turmas ativas (ou filtradas se curso foi selecionado)
+$curso_filtro = isset($_GET['curso_id']) ? (int)$_GET['curso_id'] : null;
 $query_turmas = "SELECT t.id, t.nome, c.nome as curso 
                  FROM turmas t
                  JOIN cursos c ON t.curso_id = c.id
-                 WHERE t.ativo = 1
+                 WHERE t.ativo = 1" .
+                 ($curso_filtro ? " AND t.curso_id = :curso_id" : "") . "
                  ORDER BY t.nome";
 $stmt_turmas = $db->prepare($query_turmas);
+if ($curso_filtro) {
+    $stmt_turmas->bindParam(":curso_id", $curso_filtro);
+}
 $stmt_turmas->execute();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -109,6 +121,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link rel="stylesheet" href="/Context/CSS/styles.css">
     <link rel="stylesheet" href="/Context/CSS/matriculas.css">
     <link rel="stylesheet" href="/Context/fontawesome/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Filtro de turmas por curso
+            $('#filtro_curso').change(function() {
+                const cursoId = $(this).val();
+                if (cursoId) {
+                    window.location.href = 'criar.php?curso_id=' + cursoId;
+                } else {
+                    window.location.href = 'criar.php';
+                }
+            });
+        });
+    </script>
 </head>
 <body>
     <div class="matriculas-container">
@@ -128,6 +154,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <?php unset($_SESSION['mensagem'], $_SESSION['tipo_mensagem']); ?>
             </div>
         <?php endif; ?>
+        
+        <div class="filtro-container">
+            <label for="filtro_curso">Filtrar por Curso:</label>
+            <select id="filtro_curso" name="filtro_curso">
+                <option value="">Todos os Cursos</option>
+                <?php 
+                $stmt_cursos->execute();
+                while ($curso = $stmt_cursos->fetch(PDO::FETCH_ASSOC)): ?>
+                    <option value="<?= $curso['id'] ?>" <?= $curso_filtro == $curso['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($curso['nome']) ?>
+                    </option>
+                <?php endwhile; ?>
+            </select>
+        </div>
         
         <form method="post" class="matriculas-form">
             <div class="form-row">
