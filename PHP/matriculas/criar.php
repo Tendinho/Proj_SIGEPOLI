@@ -69,35 +69,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else {
             // RN02 - Só é permitida matrícula se houver vaga e propina paga
             if (!$propina_paga) {
-                $_SESSION['mensagem'] = "Atenção: A propina não foi marcada como paga!";
-                $_SESSION['tipo_mensagem'] = "aviso";
-            }
-            
-            $query = "INSERT INTO matriculas 
-                      SET aluno_id = :aluno_id, turma_id = :turma_id, ano_letivo = :ano_letivo,
-                          semestre = :semestre, valor_propina = :valor_propina, 
-                          propina_paga = :propina_paga, status = 'Ativa'";
-            
-            $stmt = $db->prepare($query);
-            
-            $stmt->bindParam(":aluno_id", $aluno_id);
-            $stmt->bindParam(":turma_id", $turma_id);
-            $stmt->bindParam(":ano_letivo", $ano_letivo);
-            $stmt->bindParam(":semestre", $semestre);
-            $stmt->bindParam(":valor_propina", $valor_propina);
-            $stmt->bindParam(":propina_paga", $propina_paga);
-            
-            if ($stmt->execute()) {
-                $matricula_id = $db->lastInsertId();
-                registrarAuditoria('Criação', 'matriculas', $matricula_id, null, json_encode($_POST));
-                
-                $_SESSION['mensagem'] = "Matrícula cadastrada com sucesso!";
-                $_SESSION['tipo_mensagem'] = "sucesso";
-                header("Location: index.php");
-                exit();
-            } else {
-                $_SESSION['mensagem'] = "Erro ao cadastrar matrícula!";
+                $_SESSION['mensagem'] = "A matrícula só pode ser realizada se a propina estiver paga!";
                 $_SESSION['tipo_mensagem'] = "erro";
+            } else {
+                $query = "INSERT INTO matriculas 
+                          SET aluno_id = :aluno_id, turma_id = :turma_id, ano_letivo = :ano_letivo,
+                              semestre = :semestre, valor_propina = :valor_propina, 
+                              propina_paga = :propina_paga, status = 'Ativa'";
+                $stmt = $db->prepare($query);
+                $stmt->bindParam(":aluno_id", $aluno_id);
+                $stmt->bindParam(":turma_id", $turma_id);
+                $stmt->bindParam(":ano_letivo", $ano_letivo);
+                $stmt->bindParam(":semestre", $semestre);
+                $stmt->bindParam(":valor_propina", $valor_propina);
+                $stmt->bindParam(":propina_paga", $propina_paga);
+                if ($stmt->execute()) {
+                    $matricula_id = $db->lastInsertId();
+                    registrarAuditoria('Criação', 'matriculas', $matricula_id, null, json_encode($_POST));
+                    $_SESSION['mensagem'] = "Matrícula cadastrada com sucesso!";
+                    $_SESSION['tipo_mensagem'] = "sucesso";
+                    header("Location: index.php");
+                    exit();
+                } else {
+                    $_SESSION['mensagem'] = "Erro ao cadastrar matrícula!";
+                    $_SESSION['tipo_mensagem'] = "erro";
+                }
             }
         }
     }

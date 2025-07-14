@@ -9,6 +9,15 @@ $db = $database->getConnection();
 // Buscar cursos para o formulário
 $cursos = $db->query("SELECT id, nome FROM cursos WHERE ativo = 1 ORDER BY nome")->fetchAll();
 
+// Buscar professores ativos para o formulário
+$professores = $db->query("
+    SELECT p.id, f.nome_completo 
+    FROM professores p
+    JOIN funcionarios f ON p.funcionario_id = f.id
+    WHERE p.ativo = 1
+    ORDER BY f.nome_completo
+")->fetchAll();
+
 // Processar o formulário quando enviado
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -21,10 +30,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $capacidade = $_POST['capacidade'];
         $sala = $_POST['sala'];
         $periodo = $_POST['periodo'];
+        $professor_id = $_POST['professor_id'];
 
         // Validar dados
         if (empty($nome) || empty($codigo) || empty($curso_id) || empty($ano_letivo) || 
-            empty($ano_ingresso) || empty($semestre) || empty($capacidade) || empty($periodo)) {
+            empty($ano_ingresso) || empty($semestre) || empty($capacidade) || empty($periodo) ||
+            empty($professor_id)) {
             throw new Exception("Todos os campos obrigatórios devem ser preenchidos");
         }
 
@@ -35,6 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("Já existe uma turma com este código");
         }
 
+        // Iniciar transação
+        $db->beginTransaction();
+
         // Inserir nova turma
         $stmt = $db->prepare("INSERT INTO turmas (nome, codigo, curso_id, ano_letivo, ano_ingresso, 
                              semestre, capacidade, sala, periodo, ativo) 
@@ -44,13 +58,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $turma_id = $db->lastInsertId();
         
+        // Associar professor à turma como principal
+        $stmt = $db->prepare("INSERT INTO turma_professores (turma_id, professor_id, principal) 
+                             VALUES (?, ?, 1)");
+        $stmt->execute([$turma_id, $professor_id]);
+        
         // Registrar ação na auditoria
         registrarAuditoria("CRIAR_TURMA", "turmas", $turma_id, "Nova turma criada: {$nome} ({$codigo})");
+        registrarAuditoria("ALOCAR_PROFESSOR", "turma_professores", $db->lastInsertId(), 
+                         "Professor ID {$professor_id} alocado como principal para turma ID {$turma_id}");
+
+        // Confirmar transação
+        $db->commit();
 
         $_SESSION['mensagem'] = "Turma criada com sucesso!";
         $_SESSION['tipo_mensagem'] = "sucesso";
         redirect('/PHP/turmas/index.php');
     } catch (Exception $e) {
+        // Reverter transação em caso de erro
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
         $_SESSION['mensagem'] = $e->getMessage();
         $_SESSION['tipo_mensagem'] = "erro";
     }
@@ -107,19 +135,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     
                     <div class="form-group">
-                        <label for="ano_letivo">Ano Letivo *</label>
-                        <input type="number" name="ano_letivo" id="ano_letivo" min="2000" max="2100" 
-                               value="<?= date('Y') ?>" required>
+                        <label for="professor_id">Professor Responsável *</label>
+                        <select name="professor_id" id="professor_id" required>
+                            <option value="">Selecione um professor</option>
+                            <?php foreach ($professores as $professor): ?>
+                                <option value="<?= $professor['id'] ?>"><?= htmlspecialchars($professor['nome_completo']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
+                        <label for="ano_letivo">Ano Letivo *</label>
+                        <input type="number" name="ano_letivo" id="ano_letivo" min="2000" max="2100" 
+                               value="<?= date('Y') ?>" required>
+                    </div>
+                    
+                    <div class="form-group">
                         <label for="ano_ingresso">Ano de Ingresso *</label>
                         <input type="number" name="ano_ingresso" id="ano_ingresso" min="2000" max="2100" 
                                value="<?= date('Y') ?>" required>
                     </div>
-                    
+                </div>
+                
+                <div class="form-row">
                     <div class="form-group">
                         <label for="semestre">Semestre *</label>
                         <select name="semestre" id="semestre" required>
@@ -127,21 +167,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <option value="2">2º Semestre</option>
                         </select>
                     </div>
-                </div>
-                
-                <div class="form-row">
+                    
                     <div class="form-group">
                         <label for="capacidade">Capacidade (alunos) *</label>
                         <input type="number" name="capacidade" id="capacidade" min="1" max="100" value="30" required>
                     </div>
-                    
+                </div>
+                
+                <div class="form-row">
                     <div class="form-group">
                         <label for="sala">Sala</label>
                         <input type="text" name="sala" id="sala">
                     </div>
-                </div>
-                
-                <div class="form-row">
+                    
                     <div class="form-group">
                         <label for="periodo">Período *</label>
                         <select name="periodo" id="periodo" required>

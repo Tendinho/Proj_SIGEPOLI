@@ -180,7 +180,7 @@ $avaliacoes = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="header">
             <h1><i class="fas fa-clipboard-check"></i> Avaliações</h1>
             <div>
-                <a href="/PHP/avaliacoes/criar.php" class="btn btn-add"><i class="fas fa-plus"></i> Adicionar Avaliação</a>
+                <a href="criar.php" class="btn btn-add"><i class="fas fa-plus"></i> Adicionar Avaliação</a>
                 <a href="/PHP/index.php" class="btn btn-back"><i class="fas fa-arrow-left"></i> Voltar ao Menu</a>
             </div>
         </div>

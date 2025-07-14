@@ -101,24 +101,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Meu Perfil - <?= SISTEMA_NOME ?></title>
     <link rel="stylesheet" href="/Context/CSS/styles.css">
     <link rel="stylesheet" href="/Context/fontawesome/css/all.min.css">
-    <style>
-        .sidebar {
-            width: 250px;
-            background-color: #2c3e50;
-            color: #ecf0f1;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .user-info img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-    </style>
+    <link rel="stylesheet" href="/Context/CSS/perfil.css">
+
 </head>
 <body>
     <div class="dashboard">

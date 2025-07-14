@@ -94,33 +94,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("Já existe um pagamento registrado para este contrato no mês corrente");
         }
 
+        // Verificar validade da garantia (RN04)
+        $stmtGarantia = $db->prepare("SELECT garantia_validade FROM contratos WHERE id = ?");
+        $stmtGarantia->execute([$contrato_id]);
+        $garantia = $stmtGarantia->fetchColumn();
+        if (!$garantia || $garantia < date('Y-m-d')) {
+            throw new Exception("Pagamento bloqueado: a garantia do contrato está vencida ou não informada.");
+        }
+
         // Calcular SLA (100% se pagou valor completo)
         $sla_atingido = ($valor_pago >= $contrato['valor_mensal']) ? 100 : 90;
+
+        // RN05: Se SLA < 90%, calcular multa automática
+        $multa_aplicada = 0;
+        if ($sla_atingido < 90) {
+            // Buscar valor da multa do contrato
+            $stmtMulta = $db->prepare("SELECT multa_sla, sla_meta FROM contratos WHERE id = ?");
+            $stmtMulta->execute([$contrato_id]);
+            $contratoMulta = $stmtMulta->fetch(PDO::FETCH_ASSOC);
+            if ($contratoMulta && $contratoMulta['multa_sla'] > 0) {
+                $multa_aplicada = $contratoMulta['multa_sla'] * ($contratoMulta['sla_meta'] - $sla_atingido) / 100;
+            }
+        }
 
         // Preparar query com ou sem comprovante_numero
         if ($coluna_existe) {
             $sql = "INSERT INTO pagamentos_empresas (
                 contrato_id, mes_referencia, ano_referencia, valor_pago, 
                 data_pagamento, metodo_pagamento, comprovante_numero, 
-                observacoes, status, sla_atingido
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pago', ?)";
-            
+                observacoes, status, sla_atingido, multa_aplicada
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pago', ?, ?)";
             $params = [
                 $contrato_id, $mes_referencia, $ano_referencia, $valor_pago,
                 $data_pagamento, $metodo_pagamento, $comprovante_numero,
-                $observacoes, $sla_atingido
+                $observacoes, $sla_atingido, $multa_aplicada
             ];
         } else {
             $sql = "INSERT INTO pagamentos_empresas (
                 contrato_id, mes_referencia, ano_referencia, valor_pago, 
                 data_pagamento, metodo_pagamento, 
-                observacoes, status, sla_atingido
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pago', ?)";
-            
+                observacoes, status, sla_atingido, multa_aplicada
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pago', ?, ?)";
             $params = [
                 $contrato_id, $mes_referencia, $ano_referencia, $valor_pago,
                 $data_pagamento, $metodo_pagamento,
-                $observacoes, $sla_atingido
+                $observacoes, $sla_atingido, $multa_aplicada
             ];
         }
 

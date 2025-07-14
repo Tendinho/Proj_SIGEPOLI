@@ -95,264 +95,275 @@ foreach ($dados as $linha) {
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatório de Custos - SIGEPOLI</title>
     <link rel="stylesheet" href="/Context/CSS/styles.css">
+    <link rel="stylesheet" href="/Context/CSS/relatorios/custo.css">
     <link rel="stylesheet" href="/Context/fontawesome/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        .report-summary {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-        }
-        .chart-container {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-        }
-        .chart-box {
-            width: 48%;
-            padding: 15px;
-            background-color: white;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        .report-table {
-            width: 100%;
-            margin-bottom: 20px;
-        }
-        .report-table th {
-            background-color: #343a40;
-            color: white;
-        }
-        .report-table td, .report-table th {
-            padding: 8px;
-            border: 1px solid #dee2e6;
-        }
-        .report-table tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        .total-row {
-            font-weight: bold;
-            background-color: #e9ecef !important;
-        }
-        .print-button {
-            margin-bottom: 20px;
-        }
-        .negative-value {
-            color: #dc3545;
-        }
-        .positive-value {
-            color: #28a745;
-        }
-    </style>
 </head>
 <body>
-    <div class="content">
-        <div class="content-header">
-            <h1><i class="fas fa-file-invoice-dollar"></i> Relatório de Custos com Empresas</h1>
-            <div class="header-actions">
-                <a href="/PHP/index.php" class="btn btn-secondary"><i class="fas fa-home"></i> Menu Principal</a>
-                <a href="javascript:window.print()" class="btn btn-primary print-button"><i class="fas fa-print"></i> Imprimir</a>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>SIGEPOLI</h2>
+                <p><?= htmlspecialchars($_SESSION['nome_completo'] ?? 'Usuário') ?></p>
+                <p class="nivel-acesso">Nível: <?= $_SESSION['nivel_acesso'] ?? '0' ?></p>
             </div>
+            
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="/PHP/index.php"><i class="fas fa-home"></i> Dashboard</a></li>
+                    
+                    <!-- Menu Relatórios -->
+                    <li class="menu-section"><i class="fas fa-chart-bar"></i> Relatórios</li>
+                    <li><a href="/PHP/relatorios/index.php"><i class="fas fa-graduation-cap"></i> Home</a></li>
+                    <li><a href="/PHP/relatorios/carga_horaria.php"><i class="fas fa-clock"></i> Carga Horária</a></li>
+                    <li class="active"><a href="/PHP/relatorios/custo.php"><i class="fas fa-coins"></i> Custos</a></li>
+                    <li><a href="/PHP/relatorios/desempenho.php"><i class="fas fa-chart-line"></i> Desempenho</a></li>
+                    
+                    <!-- Configurações -->
+                    <li class="menu-section"><i class="fas fa-cog"></i> Sistema</li>
+                    <li><a href="/PHP/perfil.php"><i class="fas fa-user-cog"></i> Perfil</a></li>
+                    <?php if ($_SESSION['nivel_acesso'] >= 9): ?>
+                        <li><a href="/PHP/usuarios.php"><i class="fas fa-users-cog"></i> Usuários</a></li>
+                        <li><a href="/PHP/auditoria.php"><i class="fas fa-clipboard-list"></i> Auditoria</a></li>
+                    <?php endif; ?>
+                    <li><a href="/PHP/logout.php"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
+                </ul>
+            </nav>
         </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h3><i class="fas fa-filter"></i> Filtros</h3>
-            </div>
-            <div class="card-body">
-                <form method="get" class="filter-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="empresa_id">Empresa:</label>
-                            <select name="empresa_id">
-                                <option value="">Todas</option>
-                                <?php foreach ($empresas as $empresa): ?>
-                                    <option value="<?= $empresa['id'] ?>" <?= $filtros['empresa_id'] == $empresa['id'] ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($empresa['nome']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="tipo_servico">Tipo de Serviço:</label>
-                            <select name="tipo_servico">
-                                <option value="">Todos</option>
-                                <option value="Limpeza" <?= $filtros['tipo_servico'] == 'Limpeza' ? 'selected' : '' ?>>Limpeza</option>
-                                <option value="Segurança" <?= $filtros['tipo_servico'] == 'Segurança' ? 'selected' : '' ?>>Segurança</option>
-                                <option value="Cafetaria" <?= $filtros['tipo_servico'] == 'Cafetaria' ? 'selected' : '' ?>>Cafetaria</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="ano_referencia">Ano:</label>
-                            <input type="number" name="ano_referencia" min="2000" max="2100" value="<?= $filtros['ano_referencia'] ?>">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="status_contrato">Status Contrato:</label>
-                            <select name="status_contrato">
-                                <option value="ativos" <?= $filtros['status_contrato'] == 'ativos' ? 'selected' : '' ?>>Ativos</option>
-                                <option value="vencidos" <?= $filtros['status_contrato'] == 'vencidos' ? 'selected' : '' ?>>Vencidos</option>
-                                <option value="inativos" <?= $filtros['status_contrato'] == 'inativos' ? 'selected' : '' ?>>Inativos</option>
-                                <option value="todos" <?= $filtros['status_contrato'] == 'todos' ? 'selected' : '' ?>>Todos</option>
-                            </select>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="top-bar">
+                <div class="breadcrumb">
+                    <span>Relatórios</span>
+                    <span>Custos</span>
+                </div>
+                
+                <div class="user-info">
+                    <span><?= htmlspecialchars($_SESSION['nome_completo'] ?? 'Usuário') ?></span>
+                    <img src="/Context/IMG/user-default.png" alt="User">
+                </div>
+            </header>
+            
+            <div class="content">
+                <div class="cost-report-container">
+                    <div class="report-header">
+                        <h1 class="report-title">
+                            <i class="fas fa-file-invoice-dollar"></i> Relatório de Custos com Empresas
+                        </h1>
+                        <div class="report-actions">
+                            <a href="javascript:window.print()" class="btn btn-primary no-print">
+                                <i class="fas fa-print"></i> Imprimir
+                            </a>
                         </div>
                     </div>
-                    
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Aplicar Filtros</button>
-                    <a href="custo.php" class="btn btn-secondary"><i class="fas fa-times"></i> Limpar</a>
-                </form>
-            </div>
-        </div>
 
-        <div class="report-summary">
-            <h3>Resumo do Relatório - Ano <?= $filtros['ano_referencia'] ?></h3>
-            <div class="summary-grid">
-                <div class="summary-item">
-                    <h4>Total de Contratos</h4>
-                    <p><?= $total_contratos ?></p>
-                </div>
-                <div class="summary-item">
-                    <h4>Valor Anual Previsto</h4>
-                    <p><?= number_format($total_valor_anual, 2, ',', '.') ?> Kz</p>
-                </div>
-                <div class="summary-item">
-                    <h4>Total Pago</h4>
-                    <p><?= number_format($total_pago_anual, 2, ',', '.') ?> Kz</p>
-                </div>
-                <div class="summary-item">
-                    <h4>Saldo</h4>
-                    <p class="<?= ($total_valor_anual - $total_pago_anual) < 0 ? 'negative-value' : 'positive-value' ?>">
-                        <?= number_format($total_valor_anual - $total_pago_anual, 2, ',', '.') ?> Kz
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div class="chart-container">
-            <div class="chart-box">
-                <canvas id="chartPorTipo"></canvas>
-            </div>
-            <div class="chart-box">
-                <canvas id="chartPagamento"></canvas>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <h3><i class="fas fa-table"></i> Detalhes dos Custos</h3>
-            </div>
-            <div class="card-body">
-                <?php if (empty($dados)): ?>
-                    <div class="alert alert-info">Nenhum dado encontrado com os filtros aplicados.</div>
-                <?php else: ?>
-                    <table class="report-table">
-                        <thead>
-                            <tr>
-                                <th>Empresa</th>
-                                <th>Tipo Serviço</th>
-                                <th>Contrato</th>
-                                <th>Período</th>
-                                <th>Valor Mensal</th>
-                                <th>Valor Anual</th>
-                                <th>Meses Pagos</th>
-                                <th>Total Pago</th>
-                                <th>Saldo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php 
-                            $empresa_atual = null;
-                            foreach ($dados as $linha): 
-                                $valor_anual = $linha['valor_mensal'] * 12;
-                                $total_pago = $linha['total_pago'] ?: 0;
-                                $saldo = $valor_anual - $total_pago;
+                    <div class="report-filters no-print">
+                        <h3 class="summary-title"><i class="fas fa-filter"></i> Filtros</h3>
+                        <form method="get" class="filter-form">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label for="empresa_id">Empresa:</label>
+                                    <select name="empresa_id" id="empresa_id">
+                                        <option value="">Todas</option>
+                                        <?php foreach ($empresas as $empresa): ?>
+                                            <option value="<?= $empresa['id'] ?>" <?= $filtros['empresa_id'] == $empresa['id'] ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($empresa['nome']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
                                 
-                                // Adicionar linha de total por empresa quando muda
-                                if ($empresa_atual !== null && $empresa_atual != $linha['empresa_id']) {
-                                    // Calcular totais da empresa anterior
-                                    $total_empresa_valor = array_sum(array_column(array_filter($dados, function($d) use ($empresa_atual) {
-                                        return $d['empresa_id'] == $empresa_atual;
-                                    }), 'valor_mensal')) * 12;
-                                    
-                                    $total_empresa_pago = array_sum(array_column(array_filter($dados, function($d) use ($empresa_atual) {
-                                        return $d['empresa_id'] == $empresa_atual;
-                                    }), 'total_pago'));
-                                    
-                                    echo '<tr class="total-row">
-                                        <td colspan="4">Total '.htmlspecialchars($empresa_atual).'</td>
-                                        <td>'.number_format(array_sum(array_column(array_filter($dados, function($d) use ($empresa_atual) {
-                                            return $d['empresa_id'] == $empresa_atual;
-                                        }), 'valor_mensal')), 2, ',', '.').'</td>
-                                        <td>'.number_format($total_empresa_valor, 2, ',', '.').'</td>
-                                        <td></td>
-                                        <td>'.number_format($total_empresa_pago, 2, ',', '.').'</td>
-                                        <td class="'.($total_empresa_valor - $total_empresa_pago < 0 ? 'negative-value' : 'positive-value').'">
-                                            '.number_format($total_empresa_valor - $total_empresa_pago, 2, ',', '.').'
-                                        </td>
-                                    </tr>';
-                                }
-                                $empresa_atual = $linha['empresa_id'];
-                            ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($linha['empresa']) ?></td>
-                                    <td><?= htmlspecialchars($linha['tipo_servico']) ?></td>
-                                    <td><?= htmlspecialchars($linha['numero_contrato']) ?></td>
-                                    <td>
-                                        <?= date('d/m/Y', strtotime($linha['data_inicio'])) ?> - 
-                                        <?= date('d/m/Y', strtotime($linha['data_fim'])) ?>
-                                    </td>
-                                    <td><?= number_format($linha['valor_mensal'], 2, ',', '.') ?> Kz</td>
-                                    <td><?= number_format($valor_anual, 2, ',', '.') ?> Kz</td>
-                                    <td><?= $linha['meses_pagos'] ?>/12</td>
-                                    <td><?= number_format($total_pago, 2, ',', '.') ?> Kz</td>
-                                    <td class="<?= $saldo < 0 ? 'negative-value' : 'positive-value' ?>">
-                                        <?= number_format($saldo, 2, ',', '.') ?> Kz
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
+                                <div class="filter-group">
+                                    <label for="tipo_servico">Tipo de Serviço:</label>
+                                    <select name="tipo_servico" id="tipo_servico">
+                                        <option value="">Todos</option>
+                                        <option value="Limpeza" <?= $filtros['tipo_servico'] == 'Limpeza' ? 'selected' : '' ?>>Limpeza</option>
+                                        <option value="Segurança" <?= $filtros['tipo_servico'] == 'Segurança' ? 'selected' : '' ?>>Segurança</option>
+                                        <option value="Cafetaria" <?= $filtros['tipo_servico'] == 'Cafetaria' ? 'selected' : '' ?>>Cafetaria</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <label for="ano_referencia">Ano:</label>
+                                    <input type="number" name="ano_referencia" id="ano_referencia" min="2000" max="2100" 
+                                           value="<?= $filtros['ano_referencia'] ?>">
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <label for="status_contrato">Status Contrato:</label>
+                                    <select name="status_contrato" id="status_contrato">
+                                        <option value="ativos" <?= $filtros['status_contrato'] == 'ativos' ? 'selected' : '' ?>>Ativos</option>
+                                        <option value="vencidos" <?= $filtros['status_contrato'] == 'vencidos' ? 'selected' : '' ?>>Vencidos</option>
+                                        <option value="inativos" <?= $filtros['status_contrato'] == 'inativos' ? 'selected' : '' ?>>Inativos</option>
+                                        <option value="todos" <?= $filtros['status_contrato'] == 'todos' ? 'selected' : '' ?>>Todos</option>
+                                    </select>
+                                </div>
+                            </div>
                             
-                            <!-- Último total por empresa -->
-                            <?php if (!empty($dados)): ?>
-                                <?php
-                                $total_empresa_valor = array_sum(array_column(array_filter($dados, function($d) use ($empresa_atual) {
-                                    return $d['empresa_id'] == $empresa_atual;
-                                }), 'valor_mensal')) * 12;
-                                
-                                $total_empresa_pago = array_sum(array_column(array_filter($dados, function($d) use ($empresa_atual) {
-                                    return $d['empresa_id'] == $empresa_atual;
-                                }), 'total_pago'));
-                                ?>
-                                <tr class="total-row">
-                                    <td colspan="4">Total <?= htmlspecialchars($empresa_atual) ?></td>
-                                    <td><?= number_format(array_sum(array_column(array_filter($dados, function($d) use ($empresa_atual) {
-                                        return $d['empresa_id'] == $empresa_atual;
-                                    }), 'valor_mensal')), 2, ',', '.') ?></td>
-                                    <td><?= number_format($total_empresa_valor, 2, ',', '.') ?></td>
-                                    <td></td>
-                                    <td><?= number_format($total_empresa_pago, 2, ',', '.') ?></td>
-                                    <td class="<?= ($total_empresa_valor - $total_empresa_pago) < 0 ? 'negative-value' : 'positive-value' ?>">
-                                        <?= number_format($total_empresa_valor - $total_empresa_pago, 2, ',', '.') ?>
-                                    </td>
-                                </tr>
-                                
-                                <tr class="total-row bg-dark text-white">
-                                    <td colspan="5">Total Geral</td>
-                                    <td><?= number_format($total_valor_anual, 2, ',', '.') ?> Kz</td>
-                                    <td></td>
-                                    <td><?= number_format($total_pago_anual, 2, ',', '.') ?> Kz</td>
-                                    <td class="<?= ($total_valor_anual - $total_pago_anual) < 0 ? 'negative-value' : 'positive-value' ?>">
-                                        <?= number_format($total_valor_anual - $total_pago_anual, 2, ',', '.') ?> Kz
-                                    </td>
-                                </tr>
+                            <div class="filter-buttons">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-filter"></i> Aplicar Filtros
+                                </button>
+                                <a href="custo.php" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Limpar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="report-summary">
+                        <h3 class="summary-title">
+                            <i class="fas fa-chart-pie"></i> Resumo do Relatório - Ano <?= $filtros['ano_referencia'] ?>
+                        </h3>
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <h4>Total de Contratos</h4>
+                                <p><?= $total_contratos ?></p>
+                            </div>
+                            <div class="summary-item">
+                                <h4>Valor Anual Previsto</h4>
+                                <p><?= number_format($total_valor_anual, 2, ',', '.') ?> Kz</p>
+                            </div>
+                            <div class="summary-item">
+                                <h4>Total Pago</h4>
+                                <p><?= number_format($total_pago_anual, 2, ',', '.') ?> Kz</p>
+                            </div>
+                            <div class="summary-item">
+                                <h4>Saldo</h4>
+                                <p class="<?= ($total_valor_anual - $total_pago_anual) < 0 ? 'negative-value' : 'positive-value' ?>">
+                                    <?= number_format($total_valor_anual - $total_pago_anual, 2, ',', '.') ?> Kz
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-container no-print">
+                        <div class="chart-box">
+                            <canvas id="chartPorTipo"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <canvas id="chartPagamento"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-table"></i> Detalhes dos Custos</h3>
+                        </div>
+                        <div class="card-body">
+                            <?php if (empty($dados)): ?>
+                                <div class="alert alert-info">Nenhum dado encontrado com os filtros aplicados.</div>
+                            <?php else: ?>
+                                <table class="results-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Empresa</th>
+                                            <th>Tipo Serviço</th>
+                                            <th>Contrato</th>
+                                            <th>Período</th>
+                                            <th>Valor Mensal</th>
+                                            <th>Valor Anual</th>
+                                            <th>Meses Pagos</th>
+                                            <th>Total Pago</th>
+                                            <th>Saldo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php 
+                                        $empresa_atual = null;
+                                        foreach ($dados as $linha): 
+                                            $valor_anual = $linha['valor_mensal'] * 12;
+                                            $total_pago = $linha['total_pago'] ?: 0;
+                                            $saldo = $valor_anual - $total_pago;
+                                            
+                                            if ($empresa_atual !== null && $empresa_atual != $linha['empresa_id']) {
+                                                // Calcular totais da empresa anterior
+                                                $total_empresa_valor = array_sum(array_column(array_filter($dados, function($d) use ($empresa_atual) {
+                                                    return $d['empresa_id'] == $empresa_atual;
+                                                }), 'valor_mensal')) * 12;
+                                                
+                                                $total_empresa_pago = array_sum(array_column(array_filter($dados, function($d) use ($empresa_atual) {
+                                                    return $d['empresa_id'] == $empresa_atual;
+                                                }), 'total_pago'));
+                                                
+                                                echo '<tr class="total-row">
+                                                    <td colspan="4">Total '.htmlspecialchars($empresa_atual).'</td>
+                                                    <td>'.number_format(array_sum(array_column(array_filter($dados, function($d) use ($empresa_atual) {
+                                                        return $d['empresa_id'] == $empresa_atual;
+                                                    }), 'valor_mensal')), 2, ',', '.').'</td>
+                                                    <td>'.number_format($total_empresa_valor, 2, ',', '.').'</td>
+                                                    <td></td>
+                                                    <td>'.number_format($total_empresa_pago, 2, ',', '.').'</td>
+                                                    <td class="'.($total_empresa_valor - $total_empresa_pago < 0 ? 'negative-value' : 'positive-value').'">
+                                                        '.number_format($total_empresa_valor - $total_empresa_pago, 2, ',', '.').'
+                                                    </td>
+                                                </tr>';
+                                            }
+                                            $empresa_atual = $linha['empresa_id'];
+                                        ?>
+                                            <tr>
+                                                <td><?= htmlspecialchars($linha['empresa']) ?></td>
+                                                <td><?= htmlspecialchars($linha['tipo_servico']) ?></td>
+                                                <td><?= htmlspecialchars($linha['numero_contrato']) ?></td>
+                                                <td>
+                                                    <?= date('d/m/Y', strtotime($linha['data_inicio'])) ?> - 
+                                                    <?= date('d/m/Y', strtotime($linha['data_fim'])) ?>
+                                                </td>
+                                                <td><?= number_format($linha['valor_mensal'], 2, ',', '.') ?> Kz</td>
+                                                <td><?= number_format($valor_anual, 2, ',', '.') ?> Kz</td>
+                                                <td><?= $linha['meses_pagos'] ?>/12</td>
+                                                <td><?= number_format($total_pago, 2, ',', '.') ?> Kz</td>
+                                                <td class="<?= $saldo < 0 ? 'negative-value' : 'positive-value' ?>">
+                                                    <?= number_format($saldo, 2, ',', '.') ?> Kz
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                        
+                                        <!-- Último total por empresa -->
+                                        <?php if (!empty($dados)): ?>
+                                            <?php
+                                            $total_empresa_valor = array_sum(array_column(array_filter($dados, function($d) use ($empresa_atual) {
+                                                return $d['empresa_id'] == $empresa_atual;
+                                            }), 'valor_mensal')) * 12;
+                                            
+                                            $total_empresa_pago = array_sum(array_column(array_filter($dados, function($d) use ($empresa_atual) {
+                                                return $d['empresa_id'] == $empresa_atual;
+                                            }), 'total_pago'));
+                                            ?>
+                                            <tr class="total-row">
+                                                <td colspan="4">Total <?= htmlspecialchars($empresa_atual) ?></td>
+                                                <td><?= number_format(array_sum(array_column(array_filter($dados, function($d) use ($empresa_atual) {
+                                                    return $d['empresa_id'] == $empresa_atual;
+                                                }), 'valor_mensal')), 2, ',', '.') ?></td>
+                                                <td><?= number_format($total_empresa_valor, 2, ',', '.') ?></td>
+                                                <td></td>
+                                                <td><?= number_format($total_empresa_pago, 2, ',', '.') ?></td>
+                                                <td class="<?= ($total_empresa_valor - $total_empresa_pago) < 0 ? 'negative-value' : 'positive-value' ?>">
+                                                    <?= number_format($total_empresa_valor - $total_empresa_pago, 2, ',', '.') ?>
+                                                </td>
+                                            </tr>
+                                            
+                                            <tr class="total-row" style="background-color: var(--secondary-color); color: white;">
+                                                <td colspan="5">Total Geral</td>
+                                                <td><?= number_format($total_valor_anual, 2, ',', '.') ?> Kz</td>
+                                                <td></td>
+                                                <td><?= number_format($total_pago_anual, 2, ',', '.') ?> Kz</td>
+                                                <td class="<?= ($total_valor_anual - $total_pago_anual) < 0 ? 'negative-value' : 'positive-value' ?>">
+                                                    <?= number_format($total_valor_anual - $total_pago_anual, 2, ',', '.') ?> Kz
+                                                </td>
+                                            </tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
                             <?php endif; ?>
-                        </tbody>
-                    </table>
-                <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -477,6 +488,14 @@ foreach ($dados as $linha) {
                         }
                     }
                 }
+            }
+        });
+
+        // Validação de datas
+        document.getElementById('ano_referencia').addEventListener('change', function() {
+            if (this.value < 2000 || this.value > 2100) {
+                alert('Por favor, insira um ano entre 2000 e 2100');
+                this.value = new Date().getFullYear();
             }
         });
     </script>

@@ -55,30 +55,17 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="pt">
+
 <head>
+
     <meta charset="UTF-8">
     <title>Usuários - <?= SISTEMA_NOME ?></title>
     <link rel="stylesheet" href="/Context/CSS/styles.css">
     <link rel="stylesheet" href="/Context/fontawesome/css/all.min.css">
-    <style>
-        .sidebar {
-            width: 250px;
-            background-color: #2c3e50;
-            color: #ecf0f1;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .user-info img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-    </style>
+    <link rel="stylesheet" href="/Context/CSS/usuarios.css">
+
 </head>
+
 <body>
     <div class="dashboard">
         <div class="sidebar">
@@ -88,14 +75,14 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <p class="nivel-acesso">Nível: <?= $_SESSION['nivel_acesso'] ?? '0' ?></p>
             </div>
         </div>
-        
+
         <div class="main-content">
             <header class="top-bar">
                 <div class="breadcrumb">
                     <span>Configurações</span>
                     <span>Usuários</span>
                 </div>
-                
+
                 <a href="/PHP/index.php" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Voltar</a>
 
                 <div class="user-info">
@@ -103,19 +90,26 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <img src="/Context/IMG/user-default.png" alt="User">
                 </div>
             </header>
-            
+
             <div class="content">
                 <?php if (isset($_SESSION['mensagem'])): ?>
                     <div class="alert alert-<?= $_SESSION['tipo_mensagem'] ?>">
                         <?= $_SESSION['mensagem'] ?>
-                        <?php unset($_SESSION['mensagem']); unset($_SESSION['tipo_mensagem']); ?>
+                        <?php unset($_SESSION['mensagem']);
+                        unset($_SESSION['tipo_mensagem']); ?>
                     </div>
                 <?php endif; ?>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-users-cog"></i> Gestão de Usuários</h3>
-                        <a href="criar.php" class="btn btn-primary"><i class="fas fa-plus"></i> Novo Usuário</a>
+
+                <div class="users-container">
+                    <div class="users-header">
+                        <h1 class="users-title">
+                            <i class="fas fa-users-cog"></i> Gestão de Usuários
+                        </h1>
+                        <div class="users-actions">
+                            <a href="criar.php" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Novo Usuário
+                            </a>
+                        </div>
                     </div>
                     <div class="card-body">
                         <form method="get" class="filter-form">
@@ -124,7 +118,7 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <label for="busca">Pesquisar:</label>
                                     <input type="text" name="busca" placeholder="Usuário ou nome..." value="<?= htmlspecialchars($filtros['busca']) ?>">
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="ativo">Status:</label>
                                     <select name="ativo">
@@ -133,11 +127,11 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     </select>
                                 </div>
                             </div>
-                            
+
                             <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Aplicar Filtros</button>
                             <a href="usuarios.php" class="btn btn-secondary"><i class="fas fa-times"></i> Limpar</a>
                         </form>
-                        
+
                         <div class="table-responsive" style="margin-top: 20px;">
                             <table class="data-table">
                                 <thead>
@@ -177,13 +171,13 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                     </a>
                                                     <?php if ($usuario['id'] != $_SESSION['usuario_id']): ?>
                                                         <?php if ($usuario['ativo']): ?>
-                                                            <a href="desativar.php?id=<?= $usuario['id'] ?>" class="btn btn-sm btn-danger" 
-                                                               onclick="return confirm('Desativar este usuário?')" title="Desativar">
+                                                            <a href="desativar.php?id=<?= $usuario['id'] ?>" class="btn btn-sm btn-danger"
+                                                                onclick="return confirm('Desativar este usuário?')" title="Desativar">
                                                                 <i class="fas fa-user-slash"></i>
                                                             </a>
                                                         <?php else: ?>
-                                                            <a href="ativar.php?id=<?= $usuario['id'] ?>" class="btn btn-sm btn-success" 
-                                                               onclick="return confirm('Ativar este usuário?')" title="Ativar">
+                                                            <a href="ativar.php?id=<?= $usuario['id'] ?>" class="btn btn-sm btn-success"
+                                                                onclick="return confirm('Ativar este usuário?')" title="Ativar">
                                                                 <i class="fas fa-user-check"></i>
                                                             </a>
                                                         <?php endif; ?>
@@ -195,12 +189,12 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </tbody>
                             </table>
                         </div>
-                        
+
                         <?php if ($total_paginas > 1): ?>
                             <div class="pagination">
                                 <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
                                     <a href="?pagina=<?= $i ?>&busca=<?= urlencode($filtros['busca']) ?>&ativo=<?= $filtros['ativo'] ?>"
-                                       class="<?= $i == $pagina ? 'active' : '' ?>"><?= $i ?></a>
+                                        class="<?= $i == $pagina ? 'active' : '' ?>"><?= $i ?></a>
                                 <?php endfor; ?>
                             </div>
                         <?php endif; ?>
@@ -209,7 +203,8 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
     </div>
-    
+
     <script src="/Context/JS/script.js"></script>
 </body>
+
 </html>
