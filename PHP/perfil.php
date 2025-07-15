@@ -123,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="user-info">
                     <span><?= htmlspecialchars($_SESSION['nome_completo'] ?? 'Usuário') ?></span>
-                    <img src="/Proj_SIGEPOLI/Context/IMG/user-default.png" alt="User">
+                    <img src="/Context/IMG/imhuman.png" alt="User">
                 </div>
             </header>
             

@@ -1,15 +1,25 @@
 <?php
-// avaliacoes/criar.php
-require_once __DIR__ . '/../config.php';
-verificarLogin();
-verificarAcesso(5); // Nível de acesso para professores
+// Conexão com o banco de dados
+$host = 'localhost';
+$dbname = 'sigepoli';
+$username = 'root';
+$password = '2001';
 
-$database = new Database();
-$db = $database->getConnection();
+try {
+    $db = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch(PDOException $e) {
+    die("Erro de conexão: " . $e->getMessage());
+}
 
+session_start();
+if (!isset($_SESSION['usuario_id'])) {
+    header("Location: /Proj_SIGEPOLI/PHP/login.php");
+    exit();
+}
+
+// Verificar se o usuário é professor
 $usuario_id = $_SESSION['usuario_id'];
-
-// Buscar professor logado
 $query_professor = "SELECT p.id 
                     FROM professores p
                     JOIN funcionarios f ON p.funcionario_id = f.id
@@ -22,33 +32,33 @@ $stmt_professor->execute();
 $professor = $stmt_professor->fetch(PDO::FETCH_ASSOC);
 
 if (!$professor) {
-    $_SESSION['mensagem'] = "Professor não encontrado! Verifique se seu usuário está corretamente associado a um professor ativo.";
+    $_SESSION['mensagem'] = "Acesso restrito a professores!";
     $_SESSION['tipo_mensagem'] = "erro";
-    header("Location: index.php");
+    header("Location: /Proj_SIGEPOLI/PHP/index.php");
     exit();
 }
 
 // Buscar disciplinas que o professor leciona
-$query_disciplinas = "SELECT DISTINCT d.id, d.nome 
+$query_disciplinas = "SELECT DISTINCT d.id, d.nome, c.nome as curso_nome
                       FROM disciplinas d
                       JOIN aulas a ON d.id = a.disciplina_id
+                      JOIN cursos c ON d.curso_id = c.id
                       WHERE a.professor_id = :professor_id
                       AND d.ativo = 1
-                      AND a.ativo = 1
-                      ORDER BY d.nome";
+                      ORDER BY c.nome, d.nome";
 $stmt_disciplinas = $db->prepare($query_disciplinas);
 $stmt_disciplinas->bindParam(":professor_id", $professor['id']);
 $stmt_disciplinas->execute();
 $disciplinas = $stmt_disciplinas->fetchAll(PDO::FETCH_ASSOC);
 
 // Buscar turmas que o professor leciona
-$query_turmas = "SELECT DISTINCT t.id, t.nome, t.ano_letivo, t.semestre 
+$query_turmas = "SELECT DISTINCT t.id, t.nome, t.ano_letivo, t.semestre, c.nome as curso_nome
                  FROM turmas t
                  JOIN aulas a ON t.id = a.turma_id
+                 JOIN cursos c ON t.curso_id = c.id
                  WHERE a.professor_id = :professor_id
                  AND t.ativo = 1
-                 AND a.ativo = 1
-                 ORDER BY t.ano_letivo DESC, t.semestre DESC, t.nome";
+                 ORDER BY t.ano_letivo DESC, t.semestre DESC, c.nome, t.nome";
 $stmt_turmas = $db->prepare($query_turmas);
 $stmt_turmas->bindParam(":professor_id", $professor['id']);
 $stmt_turmas->execute();
@@ -85,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['mensagem'] = "Por favor, preencha todos os campos obrigatórios!";
         $_SESSION['tipo_mensagem'] = "erro";
     } 
-    // RN03 - Notas devem estar entre 0-20
+    // Notas devem estar entre 0-20
     elseif ($nota < 0 || $nota > 20) {
         $_SESSION['mensagem'] = "A nota deve estar entre 0 e 20!";
         $_SESSION['tipo_mensagem'] = "erro";
@@ -102,9 +112,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         try {
             $query = "INSERT INTO avaliacoes 
-                      (aluno_id, disciplina_id, turma_id, tipo_avaliacao, nota, data_avaliacao, observacoes, professor_id)
+                      (aluno_id, disciplina_id, turma_id, tipo_avaliacao, nota, data_avaliacao, observacoes)
                       VALUES 
-                      (:aluno_id, :disciplina_id, :turma_id, :tipo_avaliacao, :nota, :data_avaliacao, :observacoes, :professor_id)";
+                      (:aluno_id, :disciplina_id, :turma_id, :tipo_avaliacao, :nota, :data_avaliacao, :observacoes)";
             
             $stmt = $db->prepare($query);
             
@@ -115,17 +125,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $stmt->bindParam(":nota", $nota);
             $stmt->bindParam(":data_avaliacao", $data_avaliacao);
             $stmt->bindParam(":observacoes", $observacoes);
-            $stmt->bindParam(":professor_id", $professor['id']);
             
             if ($stmt->execute()) {
-                $avaliacao_id = $db->lastInsertId();
-                registrarAuditoria('CRIACAO_AVALIACAO', 'avaliacoes', $avaliacao_id, json_encode([
-                    'aluno_id' => $aluno_id,
-                    'disciplina_id' => $disciplina_id,
-                    'turma_id' => $turma_id,
-                    'nota' => $nota
-                ]));
-                
                 $_SESSION['mensagem'] = "Avaliação cadastrada com sucesso!";
                 $_SESSION['tipo_mensagem'] = "sucesso";
                 header("Location: index.php");
@@ -169,7 +170,6 @@ function verificarAlunoTurma($db, $aluno_id, $turma_id) {
     return $stmt->fetchColumn() > 0;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -222,8 +222,29 @@ function verificarAlunoTurma($db, $aluno_id, $turma_id) {
             color: #666;
             margin-top: 5px;
         }
+        .curso-info {
+            font-weight: bold;
+            color: #333;
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        .alert-success {
+            color: #3c763d;
+            background-color: #dff0d8;
+            border-color: #d6e9c6;
+        }
+        .alert-danger {
+            color: #a94442;
+            background-color: #f2dede;
+            border-color: #ebccd1;
+        }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
 </head>
 <body>
     
@@ -236,7 +257,7 @@ function verificarAlunoTurma($db, $aluno_id, $turma_id) {
         </div>
 
         <?php if (isset($_SESSION['mensagem'])): ?>
-            <div class="alert alert-<?php echo htmlspecialchars($_SESSION['tipo_mensagem']); ?>">
+            <div class="alert alert-<?php echo $_SESSION['tipo_mensagem'] == 'sucesso' ? 'success' : 'danger'; ?>">
                 <?php echo htmlspecialchars($_SESSION['mensagem']); 
                 unset($_SESSION['mensagem']); 
                 unset($_SESSION['tipo_mensagem']); ?>
@@ -254,6 +275,7 @@ function verificarAlunoTurma($db, $aluno_id, $turma_id) {
                                 <option value="<?php echo htmlspecialchars($disciplina['id']); ?>" 
                                     <?php echo (isset($_POST['disciplina_id']) && $_POST['disciplina_id'] == $disciplina['id']) ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($disciplina['nome']); ?>
+                                    <span class="curso-info">(<?php echo htmlspecialchars($disciplina['curso_nome']); ?>)</span>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -268,7 +290,8 @@ function verificarAlunoTurma($db, $aluno_id, $turma_id) {
                                     <?php echo (isset($_POST['turma_id']) && $_POST['turma_id'] == $turma['id']) ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($turma['nome']); ?>
                                     <span class="turma-info">
-                                        (<?php echo htmlspecialchars($turma['ano_letivo']); ?> - 
+                                        (<?php echo htmlspecialchars($turma['curso_nome']); ?> - 
+                                        <?php echo htmlspecialchars($turma['ano_letivo']); ?> - 
                                         <?php echo htmlspecialchars($turma['semestre']); ?>º Semestre)
                                     </span>
                                 </option>
@@ -345,7 +368,7 @@ function verificarAlunoTurma($db, $aluno_id, $turma_id) {
                     alunoSelect.empty().append('<option value="">Carregando alunos...</option>');
                     
                     $.ajax({
-                        url: '../api/alunos_matriculados.php',
+                        url: '/api/alunos_matriculados.php',
                         method: 'GET',
                         data: { turma_id: turmaId },
                         dataType: 'json',

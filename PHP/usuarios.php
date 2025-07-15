@@ -87,7 +87,7 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 <div class="user-info">
                     <span><?= htmlspecialchars($_SESSION['nome_completo'] ?? 'Usuário') ?></span>
-                    <img src="/Context/IMG/user-default.png" alt="User">
+                    <img src="/Context/IMG/imhuman.png" alt="User">
                 </div>
             </header>
 

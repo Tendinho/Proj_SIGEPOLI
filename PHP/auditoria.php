@@ -246,7 +246,7 @@ $tabelas = $db->query("SELECT DISTINCT tabela_afetada FROM auditoria WHERE tabel
                                             <td><?= date('d/m/Y H:i:s', strtotime($registro['data_hora'])) ?></td>
                                             <td class="user-cell">
                                                 <div class="user-avatar">
-                                                    <img src="/Context/IMG/user-default.png" alt="Avatar">
+                                                    <img src="/Context/IMG/imhuman.png" alt="Avatar">
                                                 </div>
                                                 <div class="user-info">
                                                     <span class="username"><?= htmlspecialchars($registro['username']) ?></span>

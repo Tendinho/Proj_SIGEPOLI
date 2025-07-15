@@ -24,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $endereco = trim($_POST['endereco']);
         $data_contratacao = $_POST['data_contratacao'];
         $salario = (float)str_replace(',', '.', $_POST['salario']);
+        $departamento_id = isset($_POST['departamento_id']) ? (int)$_POST['departamento_id'] : null;
         
         // Dados do usuário (opcional)
         $criar_usuario = isset($_POST['criar_usuario']) ? true : false;
@@ -31,7 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = $criar_usuario ? trim($_POST['email']) : null;
         $password = $criar_usuario ? trim($_POST['password']) : null;
         $cargo_id = $criar_usuario ? (int)$_POST['cargo_id'] : null;
-        $departamento_id = $criar_usuario ? (int)$_POST['departamento_id'] : null;
 
         // Validar dados básicos
         if (empty($nome_completo) || empty($bi) || empty($data_contratacao)) {
@@ -73,18 +73,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Inserir funcionário
         $stmt = $db->prepare("INSERT INTO funcionarios 
                              (usuario_id, nome_completo, bi, data_nascimento, genero, telefone, 
-                              endereco, data_contratacao, salario)
-                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                              endereco, data_contratacao, salario, departamento_id)
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
-            $usuario_id, $nome_completo, $bi, $data_nascimento, $genero, $telefone,
-            $endereco, $data_contratacao, $salario
+            $usuario_id, 
+            $nome_completo, 
+            $bi, 
+            $data_nascimento, 
+            $genero, 
+            $telefone,
+            $endereco, 
+            $data_contratacao, 
+            $salario,
+            $departamento_id
         ]);
         $funcionario_id = $db->lastInsertId();
 
         // Commit da transação
         $db->commit();
 
-        registrarAuditoria('Criou colaborador', 'funcionarios', $funcionario_id, "Nome: $nome_completo");
+        registrarAuditoria('Criou colaborador', 'funcionarios', $funcionario_id, "Nome: $nome_completo, Departamento: $departamento_id");
 
         $_SESSION['mensagem'] = "Colaborador cadastrado com sucesso!";
         $_SESSION['tipo_mensagem'] = "sucesso";
@@ -92,7 +100,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
 
     } catch (Exception $e) {
-        $db->rollBack();
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
         $erro = $e->getMessage();
     }
 }
@@ -159,6 +169,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background-color: #f8f9fa;
             border-radius: 5px;
         }
+        .required:after {
+            content: " *";
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -177,11 +191,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <h3>Dados Pessoais</h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="nome_completo">Nome Completo *</label>
+                        <label for="nome_completo" class="required">Nome Completo</label>
                         <input type="text" name="nome_completo" required>
                     </div>
                     <div class="form-group">
-                        <label for="bi">BI *</label>
+                        <label for="bi" class="required">BI</label>
                         <input type="text" name="bi" required>
                     </div>
                 </div>
@@ -207,7 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="text" name="telefone">
                     </div>
                     <div class="form-group">
-                        <label for="data_contratacao">Data de Contratação *</label>
+                        <label for="data_contratacao" class="required">Data de Contratação</label>
                         <input type="date" name="data_contratacao" required>
                     </div>
                 </div>
@@ -217,9 +231,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <textarea name="endereco" rows="2"></textarea>
                 </div>
 
-                <div class="form-group">
-                    <label for="salario">Salário (Kz)</label>
-                    <input type="text" name="salario" placeholder="0,00">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="salario">Salário (Kz)</label>
+                        <input type="text" name="salario" placeholder="0,00">
+                    </div>
+                    <div class="form-group">
+                        <label for="departamento_id">Departamento</label>
+                        <select name="departamento_id">
+                            <option value="">Selecione um departamento</option>
+                            <?php foreach ($departamentos as $depto): ?>
+                                <option value="<?= $depto['id'] ?>"><?= htmlspecialchars($depto['nome']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="toggle-section">
@@ -234,22 +259,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <h3>Dados de Acesso</h3>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="username">Username *</label>
+                                <label for="username">Username</label>
                                 <input type="text" name="username">
                             </div>
                             <div class="form-group">
-                                <label for="email">Email *</label>
+                                <label for="email">Email</label>
                                 <input type="email" name="email">
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="password">Senha *</label>
+                                <label for="password">Senha</label>
                                 <input type="password" name="password">
                             </div>
                             <div class="form-group">
-                                <label for="cargo_id">Cargo *</label>
+                                <label for="cargo_id">Cargo</label>
                                 <select name="cargo_id">
                                     <option value="">Selecione um cargo</option>
                                     <?php foreach ($cargos as $cargo): ?>
@@ -257,16 +282,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="departamento_id">Departamento</label>
-                            <select name="departamento_id">
-                                <option value="">Selecione um departamento</option>
-                                <?php foreach ($departamentos as $depto): ?>
-                                    <option value="<?= $depto['id'] ?>"><?= htmlspecialchars($depto['nome']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
                         </div>
                     </div>
                 </div>
@@ -279,10 +294,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script>
         // Mostrar/ocultar campos de usuário
         document.getElementById('criarUsuarioCheckbox').addEventListener('change', function() {
-            document.getElementById('usuarioFields').style.display = this.checked ? 'block' : 'none';
+            const usuarioFields = document.getElementById('usuarioFields');
+            usuarioFields.style.display = this.checked ? 'block' : 'none';
             
             // Tornar campos obrigatórios
-            const requiredFields = document.querySelectorAll('#usuarioFields input, #usuarioFields select');
+            const requiredFields = usuarioFields.querySelectorAll('input, select');
             requiredFields.forEach(field => {
                 field.required = this.checked;
             });
@@ -293,6 +309,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             let value = this.value.replace(/[^\d,]/g, '').replace(',', '.');
             value = parseFloat(value) || 0;
             this.value = value.toFixed(2).replace('.', ',');
+        });
+
+        // Validação do formulário
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const criarUsuario = document.getElementById('criarUsuarioCheckbox').checked;
+            if (criarUsuario) {
+                const username = document.querySelector('input[name="username"]').value.trim();
+                const email = document.querySelector('input[name="email"]').value.trim();
+                const password = document.querySelector('input[name="password"]').value.trim();
+                const cargo = document.querySelector('select[name="cargo_id"]').value;
+                
+                if (!username || !email || !password || !cargo) {
+                    e.preventDefault();
+                    alert('Preencha todos os campos de usuário quando a opção "Criar usuário" estiver marcada.');
+                }
+            }
         });
     </script>
 </body>
